@@ -1,0 +1,3763 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#16181D">
+  <title>生活作息、長期追蹤與效期庫存管理超級 App</title>
+  <link rel="apple-touch-icon" href="pangji.jpeg">
+  <meta name="description" content="行動端優先的個人生活管理工具，整合時間軸作息打卡、長期健康檢查與紀念日、美妝庫存效期雙重推估 (PAO/容量消耗)、IndexedDB 本地儲存與一鍵 JSON 備份還原。" />
+  <meta property="og:title" content="生活作息、長期追蹤與效期庫存管理超級 App" />
+  <meta property="og:description" content="行動端優先的個人生活管理工具，整合時間軸作息打卡、長期健康檢查與紀念日、美妝庫存效期雙重推估 (PAO/容量消耗)、IndexedDB 本地儲存與一鍵 JSON 備份還原。" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            morandi: {
+              DEFAULT: '#29528C',
+              dark: '#1e3d6b',
+              light: '#4A88D9',
+              soft: 'rgba(74, 136, 217, 0.12)'
+            },
+            charcoal: {
+              DEFAULT: '#393E46',
+              dark: '#16181D',
+              surface: '#22262E',
+              card: '#1E222A'
+            },
+            danger: '#EF4444',
+            lineGreen: '#06C755'
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- FontAwesome 6 CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    *, ::before, ::after {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    /* Hide scrollbars across all viewports */
+    * {
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+    }
+    ::-webkit-scrollbar {
+      display: none !important;
+    }
+    /* Prevent iOS input auto-zoom on mobile & box-sizing enforcement */
+    input, select, textarea {
+      font-size: 16px !important;
+      user-select: auto;
+      -webkit-user-select: auto;
+      box-sizing: border-box !important;
+      max-width: 100% !important;
+    }
+    /* Explicit iOS Safari / WebKit fix for date, time, and datetime inputs */
+    input[type="date"],
+    input[type="time"],
+    input[type="datetime-local"] {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      box-sizing: border-box !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      min-width: 0 !important;
+      display: block !important;
+      line-height: normal;
+    }
+    /* Fix internal iOS Safari WebKit date/time value rendering */
+    input[type="date"]::-webkit-date-and-time-value,
+    input[type="time"]::-webkit-date-and-time-value {
+      text-align: left;
+      min-height: 1.4em;
+      width: 100%;
+      padding: 0;
+      margin: 0;
+    }
+    .pb-safe {
+      padding-bottom: env(safe-area-inset-bottom, 16px);
+    }
+    .pt-safe {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+    /* Generous touch targets */
+    .touch-target {
+      min-width: 44px;
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+    /* 💡 強制隱藏 Netlify 浮動宣傳標籤 */
+    iframe[id^="netlify-"], div[id^="netlify-badge"] {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+  </style>
+</head>
+<body class="bg-[#F5F7FA] dark:bg-[#16181D] text-[#393E46] dark:text-[#F3F4F6] antialiased min-h-screen flex flex-col transition-colors duration-200">
+
+  <!-- Top App Bar -->
+  <header class="sticky top-0 z-30 bg-white/95 dark:bg-[#1E222A]/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 transition-colors pt-safe">
+    <div class="max-w-md md:max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-xl bg-morandi dark:bg-morandi-light text-white flex items-center justify-center font-black text-xs shadow-xs">
+          管
+        </div>
+        <div>
+          <h1 id="appHeaderTitle" class="text-sm font-bold text-slate-900 dark:text-slate-100 leading-tight">
+            生活與效期管家
+          </h1>
+          <p id="topBarDate" class="text-[10px] text-slate-500 dark:text-slate-400 font-medium"></p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5">
+        <!-- Theme Toggle -->
+        <button onclick="toggleTheme()" class="touch-target rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" title="切換日夜間模式">
+          <i id="themeIcon" class="fa-solid fa-moon text-sm"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Viewports Container -->
+  <main class="flex-1 max-w-md md:max-w-3xl w-full mx-auto px-4 py-4 pb-28">
+    
+    <!-- ========================================== -->
+    <!-- TAB 1: 今日打卡 (Daily Tracker & Timeline)-->
+    <!-- ========================================== -->
+    <section id="view-tasks" class="space-y-3.5">
+      <!-- Date switcher & Circular Progress Banner -->
+      <div class="bg-white dark:bg-[#1E222A] rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-xs">
+        <div class="flex items-center justify-between gap-3">
+          <!-- Date & Navigation Left Column -->
+          <div class="flex-1 min-w-0 space-y-2">
+            <div class="flex items-center gap-1">
+              <button onclick="changeSelectedDate(-1)" class="touch-target w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" title="前一天">
+                <i class="fa-solid fa-chevron-left text-xs"></i>
+              </button>
+              <div class="flex items-center gap-1.5 cursor-pointer px-1 py-1" onclick="resetToToday()">
+                <span id="currentDateDisplay" class="text-sm font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">今日作息</span>
+                <span id="todayTagBadge" class="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/70 px-1.5 py-0.5 rounded whitespace-nowrap">今天</span>
+              </div>
+              <button onclick="changeSelectedDate(1)" class="touch-target w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer" title="後一天">
+                <i class="fa-solid fa-chevron-right text-xs"></i>
+              </button>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <span id="dailyProgressBadge" class="text-xs font-mono font-bold text-morandi dark:text-morandi-light bg-morandi-soft px-2.5 py-1 rounded-lg whitespace-nowrap">
+                0 / 0 完成
+              </span>
+              <span id="dailyProgressHint" class="text-[11px] text-slate-400 font-medium truncate">持續累積好習慣</span>
+            </div>
+          </div>
+
+          <!-- Circular Ring Progress Indicator -->
+          <div class="relative w-16 h-16 shrink-0 flex items-center justify-center">
+            <svg class="w-16 h-16 -rotate-90 transform" viewBox="0 0 64 64">
+              <!-- Background Ring -->
+              <circle cx="32" cy="32" r="26" stroke-width="5" class="stroke-slate-100 dark:stroke-[#16181D]" fill="transparent" />
+              <!-- Animated Progress Ring -->
+              <circle id="dailyProgressCircle" cx="32" cy="32" r="26" stroke-width="5" stroke-linecap="round" class="stroke-morandi dark:stroke-morandi-light transition-all duration-700 ease-out" fill="transparent" stroke-dasharray="163.36" stroke-dashoffset="163.36" />
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+              <span id="dailyProgressPercentText" class="text-xs font-extrabold text-slate-900 dark:text-slate-100 font-mono tracking-tighter">0%</span>
+              <span class="text-[8px] font-semibold text-slate-400 -mt-0.5">達成率</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+        <!-- Search, Tag Filter & View Mode Switcher -->
+        <div class="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+          <div class="relative flex-1 min-w-0">
+            <input type="text" id="taskSearchInput" oninput="renderTaskList()" placeholder="搜尋今日作息..." class="w-full pl-7 pr-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#16181D] text-slate-800 dark:text-slate-100 text-xs focus:outline-none focus:border-morandi dark:focus:border-morandi-light">
+            <i class="fa-solid fa-magnifying-glass text-slate-400 absolute left-2.5 top-2.5 text-[10px]"></i>
+          </div>
+
+          <select id="taskTagFilter" onchange="renderTaskList()" class="px-2 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#16181D] text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-morandi max-w-[105px] truncate shrink-0">
+            <option value="all">全部標籤</option>
+          </select>
+
+          <!-- Toggle View: Timeline vs List -->
+          <div class="flex items-center p-0.5 bg-slate-100 dark:bg-[#16181D] rounded-xl text-xs shrink-0">
+            <button onclick="setTaskViewMode('timeline')" id="viewModeBtn-timeline" class="px-2.5 py-1.5 rounded-lg font-bold bg-morandi dark:bg-morandi-light text-white text-[11px] flex items-center gap-1 shadow-xs transition-all cursor-pointer whitespace-nowrap">
+              <i class="fa-solid fa-timeline text-[10px]"></i>
+              <span>時間軸</span>
+            </button>
+            <button onclick="setTaskViewMode('list')" id="viewModeBtn-list" class="px-2.5 py-1.5 rounded-lg font-medium text-slate-500 dark:text-slate-400 text-[11px] flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap">
+              <i class="fa-solid fa-list-check text-[10px]"></i>
+              <span>清單</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Task Items Container (Timeline or List) -->
+      <div id="taskListContainer" class="space-y-3">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 2: 長期追蹤 (Long-Term & Events)     -->
+    <!-- ========================================== -->
+    <section id="view-longterm" class="hidden space-y-3.5">
+      <!-- Section Banner & Controls -->
+      <div class="bg-white dark:bg-[#1E222A] rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <i class="fa-solid fa-hourglass-half text-morandi dark:text-morandi-light text-sm"></i>
+              <span>長期追蹤與紀念日</span>
+            </h2>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+              定期健康檢查倒數、交往/結婚紀念累積里程碑
+            </p>
+          </div>
+          <button onclick="openCreateLongTermTask()" class="px-3.5 py-2 bg-morandi dark:bg-morandi-light text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer shrink-0 whitespace-nowrap">
+            <i class="fa-solid fa-plus text-[10px]"></i>
+            <span>新增追蹤</span>
+          </button>
+        </div>
+
+        <!-- Filter & Search -->
+        <div class="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <div class="relative flex-1 min-w-0">
+            <input type="text" id="longTermSearchInput" oninput="renderLongTermCards()" placeholder="搜尋長期追蹤或紀念日..." class="w-full pl-7 pr-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#16181D] text-slate-800 dark:text-slate-100 text-xs focus:outline-none focus:border-morandi">
+            <i class="fa-solid fa-magnifying-glass text-slate-400 absolute left-2.5 top-2.5 text-[10px]"></i>
+          </div>
+
+          <select id="longTermTagFilter" onchange="renderLongTermCards()" class="px-2 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#16181D] text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-morandi max-w-[105px] truncate shrink-0">
+            <option value="all">全部標籤</option>
+          </select>
+        </div>
+
+        <!-- Quick Filter Pills -->
+        <div class="flex items-center gap-1.5 overflow-x-auto text-[11px] pt-0.5">
+          <button onclick="setLongTermFilterType('all')" id="ltPill-all" class="px-3 py-1 rounded-full font-bold bg-morandi text-white cursor-pointer whitespace-nowrap">全部</button>
+          <button onclick="setLongTermFilterType('countdown')" id="ltPill-countdown" class="px-3 py-1 rounded-full font-medium bg-slate-100 dark:bg-[#16181D] text-slate-600 dark:text-slate-400 cursor-pointer whitespace-nowrap">⏳ 倒數追蹤</button>
+          <button onclick="setLongTermFilterType('accumulation')" id="ltPill-accumulation" class="px-3 py-1 rounded-full font-medium bg-slate-100 dark:bg-[#16181D] text-slate-600 dark:text-slate-400 cursor-pointer whitespace-nowrap">❤️ 累進紀念日</button>
+        </div>
+      </div>
+
+      <!-- Long-Term Cards List (Countdown Cards & Accumulation Cards) -->
+      <div id="longTermCardsContainer" class="space-y-3.5">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 3: 效期管理 (Expiry Inventory)         -->
+    <!-- ========================================== -->
+    <section id="view-inventory" class="hidden space-y-3.5">
+      <!-- Section Header & Alert Summary -->
+      <div class="bg-white dark:bg-[#1E222A] rounded-2xl p-4 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h2 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+              <i class="fa-solid fa-boxes-stacked text-amber-500 text-sm"></i>
+              <span>美妝保養與效期庫存</span>
+            </h2>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+              瓶底效期 × PAO 開封效期 × 容量消耗智能精算
+            </p>
+          </div>
+          <button onclick="openItemModal()" class="px-3.5 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer shrink-0 whitespace-nowrap">
+            <i class="fa-solid fa-plus text-[10px]"></i>
+            <span>新增物品</span>
+          </button>
+        </div>
+
+        <!-- Expiry Stats Badges -->
+        <div class="grid grid-cols-3 gap-2 pt-1 text-center">
+          <div class="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 p-2 rounded-xl">
+            <div id="invStatExpired" class="text-base font-extrabold font-mono text-red-600 dark:text-red-400">0</div>
+            <div class="text-[10px] text-red-500 font-semibold truncate">🚨 快過期/需救援</div>
+          </div>
+          <div class="bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-900/50 p-2 rounded-xl">
+            <div id="invStatOpened" class="text-base font-extrabold font-mono text-sky-600 dark:text-sky-400">0</div>
+            <div class="text-[10px] text-sky-500 font-semibold truncate">🧴 使用中 (已開封)</div>
+          </div>
+          <div class="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 p-2 rounded-xl">
+            <div id="invStatUnopened" class="text-base font-extrabold font-mono text-emerald-600 dark:text-emerald-400">0</div>
+            <div class="text-[10px] text-emerald-500 font-semibold truncate">📦 庫存常備 (未開封)</div>
+          </div>
+        </div>
+
+        <!-- Filter & Search -->
+        <div class="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <div class="relative flex-1 min-w-0">
+            <input type="text" id="inventorySearchInput" oninput="renderInventoryCards()" placeholder="搜尋美妝/保養/藥品名稱..." class="w-full pl-7 pr-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#16181D] text-slate-800 dark:text-slate-100 text-xs focus:outline-none focus:border-amber-500">
+            <i class="fa-solid fa-magnifying-glass text-slate-400 absolute left-2.5 top-2.5 text-[10px]"></i>
+          </div>
+
+          <select id="inventoryTagFilter" onchange="renderInventoryCards()" class="px-2 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#16181D] text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:border-amber-500 max-w-[105px] truncate shrink-0">
+            <option value="all">全部標籤</option>
+          </select>
+        </div>
+
+        <!-- Inventory Pills -->
+        <div class="flex items-center gap-1.5 overflow-x-auto text-[11px] pt-0.5">
+          <button onclick="setInventoryFilterStatus('all')" id="invPill-all" class="px-3 py-1 rounded-full font-bold bg-amber-600 text-white cursor-pointer whitespace-nowrap">全部</button>
+          <button onclick="setInventoryFilterStatus('sos')" id="invPill-sos" class="px-3 py-1 rounded-full font-medium bg-slate-100 dark:bg-[#16181D] text-red-500 cursor-pointer whitespace-nowrap">🚨 快過期/需救援</button>
+          <button onclick="setInventoryFilterStatus('opened')" id="invPill-opened" class="px-3 py-1 rounded-full font-medium bg-slate-100 dark:bg-[#16181D] text-slate-600 dark:text-slate-400 cursor-pointer whitespace-nowrap">已開封</button>
+          <button onclick="setInventoryFilterStatus('unopened')" id="invPill-unopened" class="px-3 py-1 rounded-full font-medium bg-slate-100 dark:bg-[#16181D] text-slate-600 dark:text-slate-400 cursor-pointer whitespace-nowrap">未開封</button>
+        </div>
+      </div>
+
+      <!-- Inventory Cards Container -->
+      <div id="inventoryCardsContainer" class="space-y-3.5">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 4: 成就儀表板 (Dashboard)             -->
+    <!-- ========================================== -->
+    <section id="view-dashboard" class="hidden space-y-4">
+      <!-- 月份切換導航 -->
+      <div class="flex items-center justify-between bg-white dark:bg-[#1E222A] p-3 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-calendar text-morandi dark:text-morandi-light text-sm"></i>
+          <span id="dashboardMonthTitle" class="text-xs font-bold text-slate-800 dark:text-slate-100 whitespace-nowrap"></span>
+          <span class="text-[10px] font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-950 px-1.5 py-0.5 rounded whitespace-nowrap">本月</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <button onclick="changeDashboardMonth(-1)" class="touch-target rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white cursor-pointer" title="上個月"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+          <button onclick="changeDashboardMonth(1)" class="touch-target rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white cursor-pointer" title="下個月"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+        </div>
+      </div>
+
+      <!-- 目標達成率頂部卡片 (僅計算當月日常排定習慣) -->
+      <div class="bg-[#22262E] text-white rounded-2xl p-5 border border-slate-700/60 shadow-lg">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-base">📊</span>
+            <span class="text-sm font-bold tracking-tight">目標達成率 (僅計日常排定日)</span>
+          </div>
+          <div id="overallRateText" class="text-2xl font-bold font-mono tracking-tight text-white">0%</div>
+        </div>
+
+        <div class="w-full bg-[#181A1F] h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-700/30">
+          <div id="overallRateBar" class="h-full bg-gradient-to-r from-amber-600 via-yellow-500 to-amber-300 rounded-full transition-all duration-700 shadow-[0_0_8px_rgba(245,209,130,0.6)]" style="width: 0%"></div>
+        </div>
+
+        <div class="flex items-center justify-between mt-3 text-xs text-slate-400 pt-2 border-t border-slate-700/40">
+          <div class="flex items-center gap-1.5">
+            <i class="fa-solid fa-fire text-amber-400"></i>
+            <span>連續打卡：<strong id="streakDaysText" class="text-white">7</strong> 天</span>
+          </div>
+          <div id="monthCompletedStatsText" class="text-right">
+            已達成：<strong class="text-white">0 / 0</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- 習慣打卡日曆矩陣 (包含數字追蹤趨勢條) -->
+      <div id="habitMatrixGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <!-- Rendered by JS -->
+      </div>
+
+      <div class="bg-white/80 dark:bg-[#1E222A]/80 rounded-xl p-3 text-center text-xs text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800">
+        💡 提示：點擊矩陣方格可直接進行當日補打卡或取消；未排定執行的天數以深暗色呈現，不計入達成率分母！
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- TAB 5: 設定與資料安全 (Settings & Security)-->
+    <!-- ========================================== -->
+    <section id="view-settings" class="hidden space-y-4">
+      <!-- 資料安全管理區塊 (Data Security Admin Card) -->
+      <div class="bg-gradient-to-br from-[#22262E] to-[#1E222A] text-white rounded-3xl p-5 border border-slate-700/80 shadow-lg space-y-4">
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-2xl bg-morandi dark:bg-morandi-light text-white flex items-center justify-center shadow-md shrink-0">
+              <i class="fa-solid fa-shield-halved text-base"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-slate-100 flex items-center gap-1.5 flex-wrap">
+                <span>資料安全與系統備份</span>
+                <span class="text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.2 rounded font-mono font-bold whitespace-nowrap">LocalStorage + IndexedDB</span>
+              </h3>
+              <p class="text-[11px] text-slate-400 mt-0.5">
+                純前端離線運作，資料存於瀏覽器。建議定期匯出打包存至手機檔案或 iCloud，避免快取清除時遺失。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2 Big Backup & Restore Buttons -->
+        <div class="flex flex-col sm:grid sm:grid-cols-2 gap-2.5 pt-1">
+          <!-- 1. 匯出備份 (Export Backup) -->
+          <button onclick="exportBackupData()" class="p-3.5 rounded-2xl bg-morandi hover:bg-morandi-dark active:scale-[0.98] transition-all flex items-center gap-3 text-left shadow-md cursor-pointer border border-morandi-light/30">
+            <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-file-export text-lg text-white"></i>
+            </div>
+            <div class="min-w-0">
+              <div class="text-xs font-bold text-white flex items-center gap-1.5 whitespace-nowrap">
+                <span>匯出完整備份 (JSON)</span>
+                <i class="fa-solid fa-download text-[10px]"></i>
+              </div>
+              <p class="text-[10px] text-slate-200/80 mt-0.5 truncate">打包任務打卡、紀念日與美妝照片庫存</p>
+            </div>
+          </button>
+
+          <!-- 2. 匯入還原 (Import Restore) -->
+          <button onclick="triggerImportFileInput()" class="p-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 active:scale-[0.98] transition-all flex items-center gap-3 text-left shadow-md cursor-pointer border border-slate-600/50">
+            <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-file-import text-lg text-sky-400"></i>
+            </div>
+            <div class="min-w-0">
+              <div class="text-xs font-bold text-white flex items-center gap-1.5 whitespace-nowrap">
+                <span>匯入還原檔案</span>
+                <i class="fa-solid fa-upload text-[10px] text-sky-400"></i>
+              </div>
+              <p class="text-[10px] text-slate-400 mt-0.5 truncate">選取 .json 備份檔，完整覆寫復活</p>
+            </div>
+          </button>
+          <input type="file" id="importJsonFileInput" accept=".json" onchange="handleImportBackup(event)" class="hidden">
+        </div>
+
+        <!-- 進階資料清理區塊（三個獨立按鈕） -->
+        <div class="pt-3 border-t border-slate-700/50 space-y-2">
+          <div class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-broom text-amber-400"></i>
+            <span>進階資料維護與清理操作</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+            <!-- 按鈕 A: 清除紀錄 (保留任務，清空打卡勾選、數值紀錄與長期日期) -->
+            <button onclick="handleClearRecords()" class="p-3 rounded-2xl bg-slate-800/90 hover:bg-slate-700/90 active:scale-95 transition-all border border-slate-700 text-left cursor-pointer flex items-center sm:flex-col sm:items-start justify-between sm:justify-center gap-2">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0">
+                  <i class="fa-solid fa-rotate-left text-xs"></i>
+                </div>
+                <div>
+                  <div class="text-xs font-bold text-amber-300 whitespace-nowrap">清除打卡紀錄</div>
+                  <div class="text-[10px] text-slate-400 leading-tight">保留任務，清空數值與打卡</div>
+                </div>
+              </div>
+              <span class="text-[10px] text-slate-400 sm:mt-1 font-medium bg-slate-900/50 px-2 py-0.5 rounded whitespace-nowrap">重設紀錄</span>
+            </button>
+
+            <!-- 按鈕 B: 清除圖像快取 (保留庫存，清空所有照片 Base64 釋放空間) -->
+            <button onclick="handleClearImageCache()" class="p-3 rounded-2xl bg-slate-800/90 hover:bg-slate-700/90 active:scale-95 transition-all border border-slate-700 text-left cursor-pointer flex items-center sm:flex-col sm:items-start justify-between sm:justify-center gap-2">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-sky-500/15 text-sky-400 flex items-center justify-center shrink-0">
+                  <i class="fa-solid fa-image text-xs"></i>
+                </div>
+                <div>
+                  <div class="text-xs font-bold text-sky-300 whitespace-nowrap">清除圖像快取</div>
+                  <div class="text-[10px] text-slate-400 leading-tight">保留物品，清空照片釋放空間</div>
+                </div>
+              </div>
+              <span class="text-[10px] text-slate-400 sm:mt-1 font-medium bg-slate-900/50 px-2 py-0.5 rounded whitespace-nowrap">釋放空間</span>
+            </button>
+
+            <!-- 按鈕 C: 完全初始化 (危險按鈕，清空全部資料變為乾淨空白狀態) -->
+            <button onclick="handleFactoryReset()" class="p-3 rounded-2xl bg-red-950/40 hover:bg-red-900/50 active:scale-95 transition-all border border-red-800/60 text-left cursor-pointer flex items-center sm:flex-col sm:items-start justify-between sm:justify-center gap-2">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-red-500/20 text-red-400 flex items-center justify-center shrink-0">
+                  <i class="fa-solid fa-triangle-exclamation text-xs"></i>
+                </div>
+                <div>
+                  <div class="text-xs font-bold text-red-400 whitespace-nowrap">完全初始化</div>
+                  <div class="text-[10px] text-slate-400 leading-tight">清空全部資料變為乾淨空白</div>
+                </div>
+              </div>
+              <span class="text-[10px] text-red-300 sm:mt-1 font-bold bg-red-900/50 px-2 py-0.5 rounded whitespace-nowrap">純淨空白</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 外觀色彩主題 -->
+      <div class="bg-white dark:bg-[#1E222A] rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
+        <div>
+          <h4 class="text-xs font-bold text-slate-800 dark:text-slate-100">外觀色彩佈景</h4>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">預設夜間模式（炭焙烏龍與深灰黑）</p>
+        </div>
+        <div class="flex items-center gap-1 p-1 bg-slate-100 dark:bg-[#16181D] rounded-xl text-xs shrink-0">
+          <button onclick="setTheme('dark')" id="themeBtn-dark" class="px-3 py-1.5 rounded-lg font-semibold bg-morandi text-white cursor-pointer whitespace-nowrap">夜間</button>
+          <button onclick="setTheme('light')" id="themeBtn-light" class="px-3 py-1.5 rounded-lg font-semibold text-slate-500 cursor-pointer whitespace-nowrap">日間</button>
+        </div>
+      </div>
+
+      <!-- 分類標籤管理 (任務標籤 vs 物品標籤 嚴格區分) -->
+      <div class="bg-white dark:bg-[#1E222A] rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3.5">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h4 class="text-xs font-bold text-slate-800 dark:text-slate-100">分類標籤管理</h4>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">明確分離「任務標籤」與「物品標籤」，兩者不可混用</p>
+          </div>
+          <button onclick="toggleAddTagForm()" class="px-3 py-2 rounded-xl bg-morandi dark:bg-morandi-light text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap shadow-xs">
+            <i class="fa-solid fa-plus text-[10px]"></i>
+            <span>新增標籤</span>
+          </button>
+        </div>
+
+        <!-- Add Tag Form -->
+        <div id="addTagForm" class="hidden p-3.5 bg-slate-50 dark:bg-[#16181D] rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+          <div class="flex flex-col sm:flex-row gap-2.5">
+            <input type="text" id="newTagName" placeholder="標籤名稱 (例：常備藥品、重要繳費)" class="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#22262E] text-xs text-slate-800 dark:text-slate-100">
+            <select id="newTagKind" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#22262E] text-xs text-slate-800 dark:text-slate-100">
+              <option value="task">用於：任務與作息</option>
+              <option value="item">用於：效期與美妝物品</option>
+            </select>
+          </div>
+          <div class="flex items-center justify-between gap-2 pt-1">
+            <div class="flex items-center gap-2">
+              <input type="text" id="newTagIcon" value="📌" class="w-12 px-2 py-1.5 text-center rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#22262E] text-sm">
+              <input type="color" id="newTagColor" value="#E8985E" class="w-9 h-9 rounded-xl border-none cursor-pointer">
+              <span class="text-[11px] text-slate-400">選取代表圖示與色系</span>
+            </div>
+            <button onclick="saveNewTag()" class="px-3.5 py-2 bg-morandi dark:bg-morandi-light text-white rounded-xl text-xs font-bold cursor-pointer whitespace-nowrap shrink-0 shadow-xs">確認建立</button>
+          </div>
+        </div>
+
+        <!-- 任務標籤群組 -->
+        <div class="space-y-1.5">
+          <div class="text-[11px] font-bold text-morandi dark:text-morandi-light flex items-center gap-1.5">
+            <i class="fa-solid fa-list-check"></i>
+            <span>任務與作息專用標籤</span>
+          </div>
+          <div id="taskTagsGrid" class="flex flex-col sm:grid sm:grid-cols-2 gap-2 text-xs"></div>
+        </div>
+
+        <!-- 物品標籤群組 -->
+        <div class="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <div class="text-[11px] font-bold text-amber-500 flex items-center gap-1.5">
+            <i class="fa-solid fa-box-open"></i>
+            <span>美妝與效期物品專用標籤</span>
+          </div>
+          <div id="itemTagsGrid" class="flex flex-col sm:grid sm:grid-cols-2 gap-2 text-xs"></div>
+        </div>
+      </div>
+
+      <!-- GAS 雲端 Webhook 設定 (同步 Tasks 與自動建表) -->
+      <div class="bg-white dark:bg-[#1E222A] rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="w-8 h-8 rounded-xl bg-morandi/10 dark:bg-morandi-light/20 text-morandi dark:text-morandi-light flex items-center justify-center font-bold text-xs shrink-0">GAS</span>
+          <div>
+            <h4 class="text-xs font-bold text-slate-800 dark:text-slate-100">Google Apps Script 雲端同步與 LINE 自動推播</h4>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">新增任務時自動寫入試算表 Tasks 分頁；定時巡檢「未打卡」才推播</p>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <input type="text" id="gasUrlInput" placeholder="https://script.google.com/macros/s/你的部署ID/exec" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#16181D] text-xs font-mono text-slate-800 dark:text-slate-200">
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="saveGasUrl()" class="touch-target px-3.5 py-2 rounded-xl bg-morandi dark:bg-morandi-light text-white text-xs font-bold cursor-pointer whitespace-nowrap shadow-xs">儲存網址</button>
+            <button onclick="testGasPing()" class="touch-target px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium cursor-pointer whitespace-nowrap">測試連線</button>
+            <button onclick="syncAllToGas()" class="touch-target px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold cursor-pointer whitespace-nowrap shadow-xs flex items-center gap-1.5">
+              <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
+              <span>立即同步所有任務至試算表</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 摺疊面板：GAS 萬用自動建表後端腳本 -->
+        <div class="pt-2 border-t border-slate-100 dark:border-slate-800">
+          <div class="flex items-center justify-between">
+            <button type="button" onclick="toggleGasScriptPanel()" class="text-xs font-bold text-morandi dark:text-morandi-light hover:underline flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-code text-xs"></i>
+              <span>📋 查看/複製「萬用自動建表＋動態定時推播」GAS 完整腳本</span>
+            </button>
+          </div>
+
+          <div id="gasScriptPanel" class="hidden mt-3 p-3.5 bg-slate-50 dark:bg-[#16181D] rounded-xl border border-slate-200 dark:border-slate-800 space-y-2.5 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-bold text-slate-700 dark:text-slate-300">💡 提示：試算表無需手動建「Tasks」分頁，此腳本會自動建立！</span>
+              <button onclick="copyGasScript()" class="touch-target px-2.5 py-1 rounded-lg bg-morandi dark:bg-morandi-light text-white text-[11px] font-bold active:scale-95 transition-all cursor-pointer whitespace-nowrap">
+                <i class="fa-regular fa-copy mr-1"></i>複製全部程式碼
+              </button>
+            </div>
+            <pre id="gasScriptContent" class="p-3 bg-slate-900 text-slate-200 rounded-xl text-[10px] font-mono overflow-x-auto max-h-60 leading-relaxed"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: 自訂防呆確認彈窗 (Custom In-App Confirm Dialog)    -->
+  <!-- 徹底解決 iframe/行動端封鎖 window.confirm 導致無法刪除之問題 -->
+  <!-- ======================================================== -->
+  <div id="confirmModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 transition-all overscroll-contain">
+    <div class="bg-white dark:bg-[#1E222A] w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-800 text-center space-y-4 overscroll-contain">
+      <div id="confirmModalIconContainer" class="w-14 h-14 rounded-2xl bg-red-500/15 text-red-500 mx-auto flex items-center justify-center text-2xl">
+        <i id="confirmModalIcon" class="fa-solid fa-trash"></i>
+      </div>
+      <div>
+        <h3 id="confirmModalTitle" class="text-base font-bold text-slate-900 dark:text-slate-100">確定刪除此項目？</h3>
+        <p id="confirmModalMessage" class="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">此動作執行後將無法復原。</p>
+      </div>
+      <div class="flex items-center gap-2.5 pt-2">
+        <button type="button" onclick="closeConfirmModal()" class="touch-target flex-1 py-3 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer whitespace-nowrap">取消</button>
+        <button type="button" id="confirmModalActionBtn" onclick="executeConfirmModal()" class="touch-target flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer whitespace-nowrap">確定刪除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 1: 新增/編輯任務 (Mobile-Friendly Stacked Form)      -->
+  <!-- ======================================================== -->
+  <div id="taskModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 transition-all overscroll-contain">
+    <div class="bg-white dark:bg-[#1E222A] w-full max-w-xl max-h-[92vh] overflow-y-auto overscroll-contain rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-200/80 dark:border-slate-800">
+      <div class="border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center justify-between">
+        <div>
+          <h2 id="formTitle" class="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">新增任務與追蹤項目</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">自訂作息時間、打卡模式、長期週期與紀念日</p>
+        </div>
+        <button onclick="closeTaskModal()" class="touch-target rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center justify-center cursor-pointer" title="關閉">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <form id="taskForm" onsubmit="handleSaveTask(event)" class="space-y-4">
+        <input type="hidden" id="editingTaskId" value="">
+
+        <!-- 任務名稱與標籤 -->
+        <div class="flex flex-col sm:grid sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-2 w-full min-w-0">
+            <label class="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1">任務名稱 <span class="text-red-500">*</span></label>
+            <input type="text" id="taskNameInput" placeholder="例：紀錄體重、喝水2000cc、定期洗牙" required class="w-full max-w-full block box-border px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#16181D] text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:border-morandi">
+          </div>
+          <div class="w-full min-w-0">
+            <label class="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1">分類標籤</label>
+            <select id="taskTagSelect" class="w-full max-w-full block box-border px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#16181D] text-xs text-slate-800 dark:text-slate-200"></select>
+          </div>
+        </div>
+
+        <!-- 任務屬性 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">任務屬性</label>
+          <div class="flex flex-col sm:grid sm:grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-[#16181D] rounded-2xl">
+            <label class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-semibold cursor-pointer transition-all has-[:checked]:bg-morandi has-[:checked]:text-white text-slate-600 dark:text-slate-400 whitespace-nowrap">
+              <input type="radio" name="taskCategoryType" value="habit" checked onchange="handleCategoryTypeChange()" class="sr-only">
+              <i class="fa-solid fa-repeat text-xs"></i>
+              <span>日常 / 週期習慣</span>
+            </label>
+            <label class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-semibold cursor-pointer transition-all has-[:checked]:bg-morandi has-[:checked]:text-white text-slate-600 dark:text-slate-400 whitespace-nowrap">
+              <input type="radio" name="taskCategoryType" value="longterm" onchange="handleCategoryTypeChange()" class="sr-only">
+              <i class="fa-solid fa-hourglass-half text-xs"></i>
+              <span>長期追蹤 / 紀念日</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 作息時段與排序時間 -->
+        <div id="timelineSlotBlock" class="p-3.5 bg-slate-50 dark:bg-[#16181D] rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-2.5">
+          <label class="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+            <i class="fa-regular fa-clock text-morandi dark:text-morandi-light"></i>
+            <span>作息時段與時間軸排序時間</span>
+          </label>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <button type="button" onclick="setFormTimeSlot('07:00', '起床後')" class="px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-slate-200 dark:bg-[#22262E] hover:bg-morandi hover:text-white dark:hover:bg-morandi-light transition-all cursor-pointer whitespace-nowrap">☀️ 起床後 07:00</button>
+            <button type="button" onclick="setFormTimeSlot('08:30', '晨間日常')" class="px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-slate-200 dark:bg-[#22262E] hover:bg-morandi hover:text-white dark:hover:bg-morandi-light transition-all cursor-pointer whitespace-nowrap">🥛 晨間 08:30</button>
+            <button type="button" onclick="setFormTimeSlot('12:30', '午餐後')" class="px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-slate-200 dark:bg-[#22262E] hover:bg-morandi hover:text-white dark:hover:bg-morandi-light transition-all cursor-pointer whitespace-nowrap">🍱 午餐後 12:30</button>
+            <button type="button" onclick="setFormTimeSlot('19:30', '晚餐後')" class="px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-slate-200 dark:bg-[#22262E] hover:bg-morandi hover:text-white dark:hover:bg-morandi-light transition-all cursor-pointer whitespace-nowrap">🚶 晚餐後 19:30</button>
+            <button type="button" onclick="setFormTimeSlot('21:30', '夜間回顧')" class="px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-slate-200 dark:bg-[#22262E] hover:bg-morandi hover:text-white dark:hover:bg-morandi-light transition-all cursor-pointer whitespace-nowrap">🌙 夜間 21:30</button>
+            <button type="button" onclick="setFormTimeSlot('22:00', '睡前')" class="px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-slate-200 dark:bg-[#22262E] hover:bg-morandi hover:text-white dark:hover:bg-morandi-light transition-all cursor-pointer whitespace-nowrap">💤 睡前 22:00</button>
+          </div>
+          <div class="flex flex-col sm:grid sm:grid-cols-2 gap-3 pt-1">
+            <div class="w-full min-w-0">
+              <span class="block text-[11px] text-slate-500 mb-1">具體時間 (HH:mm)</span>
+              <input type="time" id="scheduledTimeInput" value="08:00" class="w-full max-w-full block box-border px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#22262E] text-xs text-slate-800 dark:text-slate-200 font-mono">
+            </div>
+            <div class="w-full min-w-0">
+              <span class="block text-[11px] text-slate-500 mb-1">時段名稱 (例：起床後、午餐後)</span>
+              <input type="text" id="timeSlotNameInput" value="日常" placeholder="例：晚餐後" class="w-full max-w-full block box-border px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#22262E] text-xs text-slate-800 dark:text-slate-200">
+            </div>
+          </div>
+        </div>
+
+        <!-- 追蹤模式 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">打卡互動模式</label>
+          <div class="flex flex-col sm:grid sm:grid-cols-3 gap-2">
+            <label class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#16181D] has-[:checked]:border-morandi dark:has-[:checked]:border-morandi-light has-[:checked]:bg-morandi/5 flex items-center sm:flex-col sm:justify-center gap-2 cursor-pointer transition-all">
+              <input type="radio" name="trackingMode" value="checkbox" checked onchange="handleTrackingModeChange()" class="sr-only">
+              <i class="fa-regular fa-square-check text-morandi dark:text-morandi-light text-base shrink-0"></i>
+              <div class="sm:text-center">
+                <span class="text-xs font-bold text-slate-800 dark:text-slate-100 block whitespace-nowrap">一般勾選</span>
+                <span class="text-[10px] text-slate-400">點擊即打卡完成</span>
+              </div>
+            </label>
+
+            <label class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#16181D] has-[:checked]:border-morandi dark:has-[:checked]:border-morandi-light has-[:checked]:bg-morandi/5 flex items-center sm:flex-col sm:justify-center gap-2 cursor-pointer transition-all">
+              <input type="radio" name="trackingMode" value="number" onchange="handleTrackingModeChange()" class="sr-only">
+              <i class="fa-solid fa-calculator text-morandi dark:text-morandi-light text-base shrink-0"></i>
+              <div class="sm:text-center">
+                <span class="text-xs font-bold text-slate-800 dark:text-slate-100 block whitespace-nowrap">數字追蹤</span>
+                <span class="text-[10px] text-slate-400">記錄體重、喝水量等數值</span>
+              </div>
+            </label>
+
+            <label class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#16181D] has-[:checked]:border-morandi dark:has-[:checked]:border-morandi-light has-[:checked]:bg-morandi/5 flex items-center sm:flex-col sm:justify-center gap-2 cursor-pointer transition-all">
+              <input type="radio" name="trackingMode" value="timestamp" onchange="handleTrackingModeChange()" class="sr-only">
+              <i class="fa-solid fa-clock text-morandi dark:text-morandi-light text-base shrink-0"></i>
+              <div class="sm:text-center">
+                <span class="text-xs font-bold text-slate-800 dark:text-slate-100 block whitespace-nowrap">時間戳記</span>
+                <span class="text-[10px] text-slate-400">打卡時自動儲存當下時間</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- 數字追蹤單位 -->
+        <div id="numberUnitBlock" class="hidden p-3 bg-slate-50 dark:bg-[#16181D] rounded-xl border border-slate-200/80 dark:border-slate-800">
+          <label class="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1">數值單位 (Unit)</label>
+          <input type="text" id="numberUnitInput" placeholder="例：kg, cc, ml, 頁, 次" value="kg" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#22262E] text-xs text-slate-900 dark:text-slate-100">
+        </div>
+
+        <!-- 週期排程設定 (日常習慣模式) -->
+        <div id="habitScheduleBlock" class="p-3.5 bg-slate-50 dark:bg-[#16181D] rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <label class="text-xs font-semibold text-slate-800 dark:text-slate-200">週期排程</label>
+            <select id="habitPeriodType" onchange="handlePeriodTypeChange()" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#22262E] text-xs text-slate-800 dark:text-slate-200">
+              <option value="intervalDays">每 X 天一次 (包含每日、每兩天)</option>
+              <option value="weekday">依星期排定 (指定一到日)</option>
+            </select>
+          </div>
+
+          <div id="intervalDaysRow" class="flex items-center gap-2">
+            <span class="text-xs text-slate-600 dark:text-slate-400 whitespace-nowrap">每</span>
+            <input type="number" id="intervalDaysInput" value="1" min="1" max="30" class="w-20 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#22262E] text-xs font-bold text-slate-900 dark:text-slate-100">
+            <span class="text-xs text-slate-600 dark:text-slate-400">天執行一次（1為每天、2為每兩天）</span>
+          </div>
+
+          <div id="weekdaySelectRow" class="hidden space-y-1.5">
+            <span class="text-[11px] text-slate-500 dark:text-slate-400">選取執行星期（未選取者不需執行）：</span>
+            <div class="flex items-center justify-between gap-1 pt-1">
+              <button type="button" onclick="toggleWeekday(1)" id="wdBtn-1" class="touch-target wd-btn w-9 h-9 rounded-full text-xs font-bold transition-all bg-morandi text-white cursor-pointer">一</button>
+              <button type="button" onclick="toggleWeekday(2)" id="wdBtn-2" class="touch-target wd-btn w-9 h-9 rounded-full text-xs font-bold transition-all bg-morandi text-white cursor-pointer">二</button>
+              <button type="button" onclick="toggleWeekday(3)" id="wdBtn-3" class="touch-target wd-btn w-9 h-9 rounded-full text-xs font-bold transition-all bg-morandi text-white cursor-pointer">三</button>
+              <button type="button" onclick="toggleWeekday(4)" id="wdBtn-4" class="touch-target wd-btn w-9 h-9 rounded-full text-xs font-bold transition-all bg-morandi text-white cursor-pointer">四</button>
+              <button type="button" onclick="toggleWeekday(5)" id="wdBtn-5" class="touch-target wd-btn w-9 h-9 rounded-full text-xs font-bold transition-all bg-morandi text-white cursor-pointer">五</button>
+              <button type="button" onclick="toggleWeekday(6)" id="wdBtn-6" class="touch-target wd-btn w-9 h-9 rounded-full text-xs font-bold transition-all bg-slate-200 dark:bg-[#22262E] text-slate-500 cursor-pointer">六</button>
+              <button type="button" onclick="toggleWeekday(0)" id="wdBtn-0" class="touch-target wd-btn w-9 h-9 rounded-full text-xs font-bold transition-all bg-slate-200 dark:bg-[#22262E] text-slate-500 cursor-pointer">日</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 長期/紀念日專用設定 -->
+        <div id="longTermConfigBlock" class="hidden p-3.5 bg-slate-50 dark:bg-[#16181D] rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">卡片呈現模式</label>
+            <div class="flex flex-col sm:grid sm:grid-cols-2 gap-2">
+              <label class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#22262E] has-[:checked]:border-morandi has-[:checked]:text-morandi dark:has-[:checked]:text-morandi-light flex items-center justify-center gap-2 cursor-pointer text-xs font-semibold whitespace-nowrap">
+                <input type="radio" name="longTermCardType" value="countdown" checked onchange="handleLongTermCardTypeChange()" class="sr-only">
+                <i class="fa-solid fa-hourglass-start"></i>
+                <span>倒數進度卡片</span>
+              </label>
+              <label class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#22262E] has-[:checked]:border-morandi has-[:checked]:text-morandi dark:has-[:checked]:text-morandi-light flex items-center justify-center gap-2 cursor-pointer text-xs font-semibold whitespace-nowrap">
+                <input type="radio" name="longTermCardType" value="accumulation" onchange="handleLongTermCardTypeChange()" class="sr-only">
+                <i class="fa-solid fa-heart"></i>
+                <span>累進紀念日卡片</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:grid sm:grid-cols-2 gap-3">
+            <div class="w-full min-w-0">
+              <label id="baseDateLabel" class="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1">起始 / 上次完成日期</label>
+              <input type="date" id="longTermStartDateInput" class="w-full max-w-full block box-border px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#22262E] text-xs text-slate-800 dark:text-slate-200">
+            </div>
+            <div id="longTermCycleCol" class="w-full min-w-0">
+              <label class="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1">追蹤週期</label>
+              <select id="longTermCycleSelect" onchange="handleLongTermCycleChange()" class="w-full max-w-full block box-border px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#22262E] text-xs text-slate-800 dark:text-slate-200">
+                <option value="90">每 90 天 (約 3 個月)</option>
+                <option value="180" selected>每 6 個月 (半年定期洗牙)</option>
+                <option value="365">每 1 年 (成人健檢)</option>
+                <option value="730">每 2 年</option>
+                <option value="1095">每 3 年 (大腸鏡)</option>
+                <option value="custom">自訂天數 (填入數字)...</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 自訂天數選填輸入框 -->
+          <div id="customCycleDaysBlock" class="hidden p-3 rounded-xl bg-slate-100 dark:bg-[#22262E] border border-slate-200 dark:border-slate-700 space-y-1">
+            <label class="block text-[11px] font-semibold text-slate-700 dark:text-slate-300">請填入自訂週期天數：</label>
+            <div class="flex items-center gap-2">
+              <input type="number" id="customCycleDaysInput" min="1" max="9999" value="90" placeholder="例如 90" class="w-28 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#16181D] text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-morandi">
+              <span class="text-xs text-slate-600 dark:text-slate-300 font-bold">天</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- LINE 官方推播 -->
+        <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#16181D] border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-500 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-bell text-xs"></i>
+            </div>
+            <div>
+              <label for="enableLinePushInput" class="text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">🔔 啟用 LINE 官方推播</label>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">排程時連線 Google Apps Script 雲端發送提醒</p>
+            </div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer shrink-0">
+            <input type="checkbox" id="enableLinePushInput" class="sr-only peer">
+            <div class="w-11 h-6 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-lineGreen"></div>
+          </label>
+        </div>
+
+        <!-- 備註說明 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1">任務備註 <span class="text-slate-400 font-normal">(選填)</span></label>
+          <input type="text" id="taskNoteInput" placeholder="例：健保給付半年一次 / 訂好慶祝餐廳" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#16181D] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-morandi">
+        </div>
+
+        <!-- 表單操作按鈕 -->
+        <div class="pt-2 flex items-center gap-2.5">
+          <button type="button" onclick="closeTaskModal()" class="w-1/3 py-3.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer whitespace-nowrap">取消</button>
+          <button type="submit" class="flex-1 py-3.5 rounded-xl bg-morandi dark:bg-morandi-light text-white text-xs font-bold hover:opacity-95 shadow-md flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer whitespace-nowrap">
+            <span>儲存並排程</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL 2: 新增/編輯庫存物品 (Mobile-Friendly Stacked Form)   -->
+  <!-- ======================================================== -->
+  <div id="itemModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 transition-all overscroll-contain">
+    <div class="bg-white dark:bg-[#1E222A] w-full max-w-xl max-h-[92vh] overflow-y-auto overscroll-contain rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-200/80 dark:border-slate-800">
+      <div class="border-b border-slate-100 dark:border-slate-800 pb-3 mb-4 flex items-center justify-between">
+        <div>
+          <h2 id="itemModalTitle" class="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">新增美妝/效期物品</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">拍照上傳即刻壓縮、自動換算 PAO 與消耗天數</p>
+        </div>
+        <button onclick="closeItemModal()" class="touch-target rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center justify-center cursor-pointer" title="關閉">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <form id="itemForm" onsubmit="handleSaveItem(event)" class="space-y-4">
+        <input type="hidden" id="editingItemId" value="">
+
+        <!-- 照片上傳區 -->
+        <div class="flex items-center gap-3.5 p-3.5 bg-slate-50 dark:bg-[#16181D] rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div class="relative w-20 h-20 rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-800 shrink-0 border border-slate-300 dark:border-slate-700 flex items-center justify-center">
+            <img id="itemPhotoPreview" src="" alt="預覽" class="hidden w-full h-full object-cover">
+            <div id="itemPhotoPlaceholder" class="text-center p-1 text-slate-400">
+              <i class="fa-solid fa-camera text-xl mb-1"></i>
+              <div class="text-[9px] whitespace-nowrap">拍照 / 上傳</div>
+            </div>
+          </div>
+          <div class="flex-1 min-w-0 space-y-1.5">
+            <label class="block text-xs font-semibold text-slate-800 dark:text-slate-200">物品照片 (自動裁切為 1:1 縮圖)</label>
+            <p class="text-[10px] text-slate-400">Canvas 瞬間壓縮為 300x300 高品質小圖儲存於 IndexedDB</p>
+            <div class="flex items-center gap-2 pt-1 flex-wrap">
+              <label class="px-3 py-2 rounded-xl bg-morandi dark:bg-morandi-light text-white text-xs font-bold cursor-pointer hover:opacity-90 active:scale-95 transition-all shadow-xs inline-flex items-center gap-1.5 whitespace-nowrap">
+                <i class="fa-solid fa-upload text-[11px]"></i>
+                <span>選擇照片 / 拍照</span>
+                <input type="file" id="itemPhotoFileInput" accept="image/*" onchange="handleItemPhotoSelected(event)" class="hidden">
+              </label>
+              <button type="button" onclick="removeCurrentItemPhoto()" class="px-2.5 py-1.5 text-xs text-slate-400 hover:text-red-500 cursor-pointer whitespace-nowrap">清除</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 物品名稱與物品專屬標籤 -->
+        <div class="flex flex-col sm:grid sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-2 w-full min-w-0">
+            <label class="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1">物品名稱 <span class="text-red-500">*</span></label>
+            <input type="text" id="itemNameInput" placeholder="例：小黑瓶修護精華、安耐曬防曬乳" required class="w-full max-w-full block box-border px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#16181D] text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:border-amber-500">
+          </div>
+          <div class="w-full min-w-0">
+            <label class="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1">物品標籤</label>
+            <select id="itemTagSelect" class="w-full max-w-full block box-border px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#16181D] text-xs text-slate-800 dark:text-slate-200"></select>
+          </div>
+        </div>
+
+        <!-- 開封狀態切換 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1.5">開封狀態</label>
+          <div class="flex flex-col sm:grid sm:grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-[#16181D] rounded-2xl">
+            <label class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-semibold cursor-pointer transition-all has-[:checked]:bg-amber-600 has-[:checked]:text-white text-slate-600 dark:text-slate-400 whitespace-nowrap">
+              <input type="radio" name="itemStatus" value="unopened" checked onchange="handleItemStatusChange()" class="sr-only">
+              <i class="fa-solid fa-box text-xs"></i>
+              <span>未開封 (以瓶底效期為主)</span>
+            </label>
+            <label class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-semibold cursor-pointer transition-all has-[:checked]:bg-amber-600 has-[:checked]:text-white text-slate-600 dark:text-slate-400 whitespace-nowrap">
+              <input type="radio" name="itemStatus" value="opened" onchange="handleItemStatusChange()" class="sr-only">
+              <i class="fa-solid fa-box-open text-xs"></i>
+              <span>已開封 (計算 PAO 開封效期)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 效期核心欄位 -->
+        <div class="p-3.5 bg-slate-50 dark:bg-[#16181D] rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-3">
+          <div class="w-full min-w-0">
+            <label class="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1">
+              瓶底 / 外盒到期日 (EXP Date) <span class="text-red-500">*</span>
+            </label>
+            <input type="date" id="itemExpDateInput" required class="w-full max-w-full block box-border px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#22262E] text-xs text-slate-800 dark:text-slate-200">
+          </div>
+
+          <!-- 已開封專用欄位 -->
+          <div id="itemOpenedConfigBlock" class="hidden flex flex-col sm:grid sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200 dark:border-slate-800">
+            <div class="w-full min-w-0">
+              <label class="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1">開封日期</label>
+              <input type="date" id="itemOpenedDateInput" class="w-full max-w-full block box-border px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#22262E] text-xs text-slate-800 dark:text-slate-200">
+            </div>
+            <div class="w-full min-w-0">
+              <label class="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1">PAO 開封後效期 (月)</label>
+              <select id="itemPaoInput" class="w-full max-w-full block box-border px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#22262E] text-xs text-slate-800 dark:text-slate-200">
+                <option value="3">3 個月 (3M)</option>
+                <option value="6" selected>6 個月 (6M - 常用)</option>
+                <option value="9">9 個月 (9M)</option>
+                <option value="12">12 個月 (12M - 常用)</option>
+                <option value="24">24 個月 (24M)</option>
+                <option value="0">無標註 / 不限制</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 容量消耗推估 -->
+        <div class="p-3.5 bg-slate-50 dark:bg-[#16181D] rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+              <i class="fa-solid fa-calculator text-amber-500"></i>
+              <span>容量消耗預估 <span class="text-slate-400 font-normal">(選填，推算是否會過期浪費)</span></span>
+            </label>
+          </div>
+          <div class="flex flex-col sm:grid sm:grid-cols-3 gap-3">
+            <div>
+              <span class="block text-[11px] text-slate-500 mb-1">總容量</span>
+              <input type="number" step="0.1" id="itemCapacityInput" placeholder="例：100" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#22262E] text-xs text-slate-800 dark:text-slate-200">
+            </div>
+            <div>
+              <span class="block text-[11px] text-slate-500 mb-1">容量單位</span>
+              <input type="text" id="itemUnitInput" value="ml" placeholder="ml, 錠, g" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#22262E] text-xs text-slate-800 dark:text-slate-200">
+            </div>
+            <div>
+              <span class="block text-[11px] text-slate-500 mb-1">每日預估用量</span>
+              <input type="number" step="0.1" id="itemDailyUsageInput" placeholder="例：0.5" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#22262E] text-xs text-slate-800 dark:text-slate-200">
+            </div>
+          </div>
+          <p class="text-[10px] text-slate-400">若按此用量無法在死線前用完，卡片會自動跳出警告與「🚨 呼叫夥伴幫忙用」推播！</p>
+        </div>
+
+        <!-- 備註說明 -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1">備註說明 <span class="text-slate-400 font-normal">(選填)</span></label>
+          <input type="text" id="itemNoteInput" placeholder="例：週年慶特惠組 / 放更衣室化妝台" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#16181D] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:border-amber-500">
+        </div>
+
+        <!-- 表單操作按鈕 -->
+        <div class="pt-2 flex items-center gap-2.5">
+          <button type="button" onclick="closeItemModal()" class="w-1/3 py-3.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer whitespace-nowrap">取消</button>
+          <button type="submit" class="flex-1 py-3.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold hover:opacity-95 shadow-md flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer whitespace-nowrap">
+            <span>儲存物品庫存</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- SMART FAB: 全局智慧懸浮新增按鈕 (Smart FAB)               -->
+  <!-- ======================================================== -->
+  <button onclick="handleSmartFabClick()" id="smartFabBtn" class="touch-target fixed bottom-20 right-4 sm:right-6 z-40 w-14 h-14 rounded-2xl bg-morandi dark:bg-morandi-light text-white shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer ring-4 ring-black/10 dark:ring-white/10" title="快速新增">
+    <i id="smartFabIcon" class="fa-solid fa-plus text-lg"></i>
+  </button>
+
+  <!-- ======================================================== -->
+  <!-- 底部固定導航列 (5 Tabs: 今日打卡, 長期追蹤, 效期管理, 成就儀表板, 設定) -->
+  <!-- ======================================================== -->
+  <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#1E222A]/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 transition-colors pb-safe">
+    <div class="max-w-md mx-auto grid grid-cols-5 items-center h-16 px-1">
+      <button onclick="switchTab('tasks')" id="nav-tasks" class="touch-target nav-btn flex flex-col items-center justify-center py-1 text-morandi dark:text-morandi-light font-bold cursor-pointer">
+        <i class="fa-regular fa-square-check text-lg"></i>
+        <span class="text-[10px] mt-1 whitespace-nowrap">今日打卡</span>
+      </button>
+      <button onclick="switchTab('longterm')" id="nav-longterm" class="touch-target nav-btn flex flex-col items-center justify-center py-1 text-slate-500 dark:text-slate-400 font-medium cursor-pointer">
+        <i class="fa-solid fa-hourglass-half text-lg"></i>
+        <span class="text-[10px] mt-1 whitespace-nowrap">長期追蹤</span>
+      </button>
+      <button onclick="switchTab('inventory')" id="nav-inventory" class="touch-target nav-btn flex flex-col items-center justify-center py-1 text-slate-500 dark:text-slate-400 font-medium cursor-pointer">
+        <i class="fa-solid fa-boxes-stacked text-lg"></i>
+        <span class="text-[10px] mt-1 whitespace-nowrap">效期管理</span>
+      </button>
+      <button onclick="switchTab('dashboard')" id="nav-dashboard" class="touch-target nav-btn flex flex-col items-center justify-center py-1 text-slate-500 dark:text-slate-400 font-medium cursor-pointer">
+        <i class="fa-solid fa-chart-simple text-lg"></i>
+        <span class="text-[10px] mt-1 whitespace-nowrap">成就儀表板</span>
+      </button>
+      <button onclick="switchTab('settings')" id="nav-settings" class="touch-target nav-btn flex flex-col items-center justify-center py-1 text-slate-500 dark:text-slate-400 font-medium cursor-pointer">
+        <i class="fa-solid fa-gear text-lg"></i>
+        <span class="text-[10px] mt-1 whitespace-nowrap">設定</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- 浮動 Toast 提示通知容器 -->
+  <div id="toastContainer" class="fixed bottom-24 right-4 left-4 sm:left-auto sm:w-80 z-50 pointer-events-none flex flex-col gap-2"></div>
+
+  <!-- APPLICATION JAVASCRIPT LOGIC (LocalStorage + IndexedDB Persistent) -->
+  <script>
+    // Storage Keys
+    const KEY_TASKS = 'habit_tracker_tasks_v6';
+    const KEY_TASK_TAGS = 'habit_tracker_task_tags_v6';
+    const KEY_ITEM_TAGS = 'habit_tracker_item_tags_v6';
+    const KEY_HISTORY = 'habit_tracker_history_v6';
+    const KEY_THEME = 'habit_tracker_theme_v6';
+    const KEY_GAS_URL = 'habit_tracker_gas_url_v6';
+    const KEY_VIEW_MODE = 'habit_tracker_view_mode_v6';
+    const KEY_FACTORY_RESET = 'habit_tracker_factory_reset_done';
+
+    // IndexedDB constants for Inventory
+    const IDB_NAME = 'RoutineInventoryDB_v6';
+    const IDB_VERSION = 1;
+    const IDB_STORE_ITEMS = 'inventory_items';
+
+    // 1. Task Tags
+    const INITIAL_TASK_TAGS = [
+      { id: 'tt-health', name: '健康習慣', icon: '🥛', color: '#6BA4E8' },
+      { id: 'tt-weight', name: '體態管理', icon: '💛', color: '#F2C94C' },
+      { id: 'tt-routine', name: '生活作息', icon: '☀️', color: '#34D399' },
+      { id: 'tt-finance', name: '財務管理', icon: '💰', color: '#06C755' },
+      { id: 'tt-pet', name: '胖吉生活', icon: '🐾', color: '#A78BFA' },
+      { id: 'tt-medical', name: '醫療保養', icon: '🏥', color: '#27AE60' },
+      { id: 'tt-anniversary', name: '紀念里程', icon: '💍', color: '#EB5757' }
+    ];
+
+    // 2. Inventory Tags
+    const INITIAL_ITEM_TAGS = [
+      { id: 'it-serum', name: '精華與原液', icon: '💧', color: '#4A88D9' },
+      { id: 'it-sunscreen', name: '防曬隔離', icon: '☀️', color: '#F2994A' },
+      { id: 'it-cream', name: '乳霜眼霜', icon: '🧴', color: '#9B51E0' },
+      { id: 'it-supplement', name: '常備保健品', icon: '💊', color: '#27AE60' },
+      { id: 'it-mask', name: '面膜修護', icon: '✨', color: '#EB5757' }
+    ];
+
+    // 3. User's exact tasks from requirements
+    const INITIAL_TASKS = [
+      {
+        id: 't-weight',
+        name: '紀錄體重',
+        categoryType: 'habit',
+        trackingMode: 'number',
+        unit: 'kg',
+        periodType: 'intervalDays',
+        frequency: 1,
+        scheduledTime: '07:00',
+        timeSlotName: '起床後',
+        tagId: 'tt-weight',
+        note: '晨起空腹測量記錄，掌握體態健康',
+        enableLinePush: false,
+        accentColor: '#F2C94C'
+      },
+      {
+        id: 't-water',
+        name: '喝水2000cc以上',
+        categoryType: 'habit',
+        trackingMode: 'number',
+        unit: 'cc',
+        periodType: 'intervalDays',
+        frequency: 1,
+        scheduledTime: '08:30',
+        timeSlotName: '晨間~全天',
+        tagId: 'tt-health',
+        note: '維持充足水分代謝，每日目標 2000cc',
+        enableLinePush: false,
+        accentColor: '#6BA4E8'
+      },
+      {
+        id: 't-supplements',
+        name: '補充保健食品(B群,C群)',
+        categoryType: 'habit',
+        trackingMode: 'checkbox',
+        periodType: 'intervalDays',
+        frequency: 1,
+        scheduledTime: '12:30',
+        timeSlotName: '午餐後',
+        tagId: 'tt-health',
+        note: '午餐後配溫水服用，補充體力與免疫力',
+        enableLinePush: false,
+        accentColor: '#E8985E'
+      },
+      {
+        id: 't-walk',
+        name: '晚餐後走路半小時',
+        categoryType: 'habit',
+        trackingMode: 'checkbox',
+        periodType: 'intervalDays',
+        frequency: 1,
+        scheduledTime: '19:30',
+        timeSlotName: '晚餐後',
+        tagId: 'tt-routine',
+        note: '餐後散步消化 30 分鐘，維持好活力與精神',
+        enableLinePush: false,
+        accentColor: '#34D399'
+      },
+      {
+        id: 't-expense',
+        name: '每天記帳(Line要推播)',
+        categoryType: 'habit',
+        trackingMode: 'timestamp',
+        periodType: 'intervalDays',
+        frequency: 1,
+        scheduledTime: '21:30',
+        timeSlotName: '夜間回顧',
+        tagId: 'tt-finance',
+        note: '檢視今日消費與記帳，掌握資產與支出',
+        enableLinePush: true,
+        accentColor: '#06C755'
+      },
+      {
+        id: 't-pet-teeth',
+        name: '每兩天幫忙胖吉刷牙',
+        categoryType: 'habit',
+        trackingMode: 'checkbox',
+        periodType: 'intervalDays',
+        frequency: 2,
+        scheduledTime: '22:00',
+        timeSlotName: '睡前',
+        tagId: 'tt-pet',
+        note: '每兩天定期刷牙，保護牙齒與口腔健康',
+        enableLinePush: false,
+        accentColor: '#A78BFA'
+      },
+      // 長期追蹤
+      {
+        id: 't-dental',
+        name: '定期洗牙',
+        categoryType: 'longterm',
+        cardMode: 'countdown',
+        startDate: '2026-09-11',
+        cycleDays: 180,
+        tagId: 'tt-medical',
+        note: '健保每半年給付一次口腔檢查與洗牙結石清除',
+        enableLinePush: true,
+        accentColor: '#27AE60'
+      },
+      {
+        id: 't-wedding',
+        name: '結婚紀念日',
+        categoryType: 'longterm',
+        cardMode: 'accumulation',
+        startDate: '2023-11-05',
+        tagId: 'tt-anniversary',
+        note: '相伴一生的重要承諾，每年 11 月 5 日慶祝',
+        enableLinePush: true,
+        accentColor: '#EB5757'
+      },
+      {
+        id: 't-relationship',
+        name: '交往紀念日',
+        categoryType: 'longterm',
+        cardMode: 'accumulation',
+        startDate: '2016-04-12',
+        tagId: 'tt-anniversary',
+        note: '珍惜一路走來的默契與美好回憶',
+        enableLinePush: true,
+        accentColor: '#F77F00'
+      }
+    ];
+
+    // State Variables
+    let currentTab = 'tasks';
+    let tasks = [];
+    let taskTags = [];
+    let itemTags = [];
+    let history = {};
+    let inventoryItems = [];
+    let selectedDate = new Date();
+    let taskViewMode = 'timeline';
+    let longTermFilterType = 'all';
+    let inventoryFilterStatus = 'all';
+    let dashYear = new Date().getFullYear();
+    let dashMonth = new Date().getMonth() + 1;
+    let selectedWeekdays = [1, 2, 3, 4, 5];
+    let currentPhotoBase64 = '';
+    let currentConfirmAction = null; // for custom confirmation dialog
+
+    // ==========================================
+    // BODY SCROLL LOCK HELPER
+    // Locks document.body when any modal is open to prevent background scroll bleed on iOS/mobile
+    // ==========================================
+    function updateBodyScrollLock() {
+      const isTaskOpen = document.getElementById('taskModal') && !document.getElementById('taskModal').classList.contains('hidden');
+      const isItemOpen = document.getElementById('itemModal') && !document.getElementById('itemModal').classList.contains('hidden');
+      const isConfirmOpen = document.getElementById('confirmModal') && !document.getElementById('confirmModal').classList.contains('hidden');
+
+      if (isTaskOpen || isItemOpen || isConfirmOpen) {
+        document.body.classList.add('overflow-hidden');
+      } else {
+        document.body.classList.remove('overflow-hidden');
+      }
+    }
+
+    // ==========================================
+    // CUSTOM CONFIRMATION MODAL LOGIC
+    // Completely replaces window.confirm to guarantee execution in all iframes & mobile webviews
+    // ==========================================
+    function showConfirmDialog({ title, message, icon = 'fa-trash', danger = true, confirmText = '確定刪除', onConfirm }) {
+      document.getElementById('confirmModalTitle').innerText = title;
+      document.getElementById('confirmModalMessage').innerText = message;
+      document.getElementById('confirmModalIcon').className = `fa-solid ${icon}`;
+
+      const iconContainer = document.getElementById('confirmModalIconContainer');
+      const actionBtn = document.getElementById('confirmModalActionBtn');
+
+      if (danger) {
+        iconContainer.className = 'w-14 h-14 rounded-2xl bg-red-500/15 text-red-500 mx-auto flex items-center justify-center text-2xl';
+        actionBtn.className = 'touch-target flex-1 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer whitespace-nowrap';
+      } else {
+        iconContainer.className = 'w-14 h-14 rounded-2xl bg-morandi-soft text-morandi dark:text-morandi-light mx-auto flex items-center justify-center text-2xl';
+        actionBtn.className = 'touch-target flex-1 py-3 rounded-xl bg-morandi dark:bg-morandi-light text-white text-xs font-bold transition-all shadow-md active:scale-95 cursor-pointer whitespace-nowrap';
+      }
+
+      actionBtn.innerText = confirmText;
+      currentConfirmAction = onConfirm;
+      document.getElementById('confirmModal').classList.remove('hidden');
+      updateBodyScrollLock();
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('confirmModal').classList.add('hidden');
+      currentConfirmAction = null;
+      updateBodyScrollLock();
+    }
+
+    function executeConfirmModal() {
+      if (typeof currentConfirmAction === 'function') {
+        const action = currentConfirmAction;
+        currentConfirmAction = null;
+        action();
+      }
+      closeConfirmModal();
+    }
+
+    // ==========================================
+    // INDEXEDDB HELPER FUNCTIONS (Module B)
+    // ==========================================
+    function openDb() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(IDB_STORE_ITEMS)) {
+            db.createObjectStore(IDB_STORE_ITEMS, { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = (e) => resolve(e.target.result);
+        req.onerror = (e) => reject(e.target.error);
+      });
+    }
+
+    async function dbGetAllItems() {
+      const db = await openDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE_ITEMS, 'readonly');
+        const store = tx.objectStore(IDB_STORE_ITEMS);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbSaveItem(item) {
+      const db = await openDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE_ITEMS, 'readwrite');
+        const store = tx.objectStore(IDB_STORE_ITEMS);
+        const req = store.put(item);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbDeleteItem(id) {
+      const db = await openDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE_ITEMS, 'readwrite');
+        const store = tx.objectStore(IDB_STORE_ITEMS);
+        const req = store.delete(id);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbClearAllItems() {
+      const db = await openDb();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_STORE_ITEMS, 'readwrite');
+        const store = tx.objectStore(IDB_STORE_ITEMS);
+        const req = store.clear();
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    // Canvas 1:1 Square 300x300 Image Compressor
+    function compressAndCropToSquare(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const size = 300;
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            const minDim = Math.min(img.width, img.height);
+            const sx = (img.width - minDim) / 2;
+            const sy = (img.height - minDim) / 2;
+
+            ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+            const base64 = canvas.toDataURL('image/jpeg', 0.85);
+            resolve(base64);
+          };
+          img.onerror = reject;
+          img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function createMockThumbnail(title, iconText, bgColor) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 300;
+      canvas.height = 300;
+      const ctx = canvas.getContext('2d');
+
+      const grad = ctx.createLinearGradient(0, 0, 300, 300);
+      grad.addColorStop(0, bgColor || '#29528C');
+      grad.addColorStop(1, '#16181D');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 300, 300);
+
+      ctx.font = '80px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(iconText || '🧴', 150, 130);
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 22px "Noto Sans TC", sans-serif';
+      ctx.fillText(title, 150, 215);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.font = '16px sans-serif';
+      ctx.fillText('美妝庫存', 150, 245);
+
+      return canvas.toDataURL('image/jpeg', 0.85);
+    }
+
+    function generateInitialInventory() {
+      return [
+        {
+          id: 'item-serum-black',
+          name: '小黑瓶極光精華 100ml',
+          tagId: 'it-serum',
+          status: 'opened',
+          expDate: '2027-03-31',
+          openedDate: '2026-06-15',
+          paoMonths: 12,
+          totalCapacity: 100,
+          unit: 'ml',
+          dailyUsage: 0.3,
+          note: '專櫃免稅大容量限定款，質地清爽好吸收',
+          photoBase64: createMockThumbnail('小黑瓶', '💧', '#1e3d6b')
+        },
+        {
+          id: 'item-sunscreen',
+          name: '水感極效防曬乳 SPF50+ 50ml',
+          tagId: 'it-sunscreen',
+          status: 'opened',
+          expDate: '2026-11-20',
+          openedDate: '2026-05-01',
+          paoMonths: 6,
+          totalCapacity: 50,
+          unit: 'ml',
+          dailyUsage: 1.0,
+          note: '海邊戶外必備，快到期請盡量厚塗！',
+          photoBase64: createMockThumbnail('防曬乳', '☀️', '#F2994A')
+        },
+        {
+          id: 'item-vitamins',
+          name: '高單位綜合維他命 120錠',
+          tagId: 'it-supplement',
+          status: 'unopened',
+          expDate: '2027-12-31',
+          openedDate: '',
+          paoMonths: 0,
+          totalCapacity: 120,
+          unit: '錠',
+          dailyUsage: 1,
+          note: '好市多買的大包裝常備品，全新未拆',
+          photoBase64: createMockThumbnail('維他命', '💊', '#27AE60')
+        },
+        {
+          id: 'item-cream',
+          name: '全效緊緻修護乳霜 50ml',
+          tagId: 'it-cream',
+          status: 'opened',
+          expDate: '2027-10-15',
+          openedDate: '2026-09-01',
+          paoMonths: 12,
+          totalCapacity: 50,
+          unit: 'ml',
+          dailyUsage: 0.25,
+          note: '夜間睡前保養使用',
+          photoBase64: createMockThumbnail('修護霜', '🧴', '#9B51E0')
+        }
+      ];
+    }
+
+    function safeGet(k) {
+      try { return localStorage.getItem(k); } catch (e) { return null; }
+    }
+    function safeSet(k, v) {
+      try { localStorage.setItem(k, v); } catch (e) {}
+    }
+
+    function formatDateIso(d) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function getTodayIso() {
+      return formatDateIso(new Date());
+    }
+
+    // ==========================================
+    // INITIALIZATION
+    // ==========================================
+    async function init() {
+      const savedTheme = safeGet(KEY_THEME) || 'dark';
+      setTheme(savedTheme, false);
+
+      taskViewMode = safeGet(KEY_VIEW_MODE) || 'timeline';
+      updateViewModeUi();
+
+      const isFactoryReset = safeGet(KEY_FACTORY_RESET) === 'true';
+
+      try {
+        const storedTaskTags = JSON.parse(safeGet(KEY_TASK_TAGS));
+        taskTags = Array.isArray(storedTaskTags) && storedTaskTags.length > 0 ? storedTaskTags : INITIAL_TASK_TAGS;
+      } catch (e) { taskTags = INITIAL_TASK_TAGS; }
+
+      try {
+        const storedItemTags = JSON.parse(safeGet(KEY_ITEM_TAGS));
+        itemTags = Array.isArray(storedItemTags) && storedItemTags.length > 0 ? storedItemTags : INITIAL_ITEM_TAGS;
+      } catch (e) { itemTags = INITIAL_ITEM_TAGS; }
+
+      try {
+        const storedTasks = JSON.parse(safeGet(KEY_TASKS));
+        if (Array.isArray(storedTasks)) {
+          tasks = storedTasks;
+        } else if (!isFactoryReset) {
+          tasks = INITIAL_TASKS;
+        } else {
+          tasks = [];
+        }
+      } catch (e) { tasks = isFactoryReset ? [] : INITIAL_TASKS; }
+
+      try {
+        const storedHistory = JSON.parse(safeGet(KEY_HISTORY));
+        if (storedHistory && typeof storedHistory === 'object') {
+          history = storedHistory;
+        } else if (!isFactoryReset) {
+          history = generateDefaultHistory();
+          safeSet(KEY_HISTORY, JSON.stringify(history));
+        } else {
+          history = {};
+        }
+      } catch (e) {
+        history = isFactoryReset ? {} : generateDefaultHistory();
+      }
+
+      // Migrate mock weight data (around 54) to 49, and ensure weight records have no decimal fluctuations
+      if (history && history['t-weight']) {
+        let changed = false;
+        for (const dateKey in history['t-weight']) {
+          const rec = history['t-weight'][dateKey];
+          if (rec && rec.value !== undefined) {
+            if (rec.value >= 52 && rec.value <= 56) {
+              rec.value = 49;
+              changed = true;
+            } else if (!Number.isInteger(rec.value)) {
+              rec.value = Math.round(rec.value);
+              changed = true;
+            }
+          }
+        }
+        if (changed) {
+          safeSet(KEY_HISTORY, JSON.stringify(history));
+        }
+      }
+
+      const gasInput = document.getElementById('gasUrlInput');
+      if (gasInput) gasInput.value = safeGet(KEY_GAS_URL) || '';
+
+      try {
+        inventoryItems = await dbGetAllItems();
+        if ((!inventoryItems || inventoryItems.length === 0) && !isFactoryReset) {
+          inventoryItems = generateInitialInventory();
+          for (const item of inventoryItems) {
+            await dbSaveItem(item);
+          }
+        }
+      } catch (e) {
+        console.warn('IndexedDB initial load error:', e);
+        inventoryItems = isFactoryReset ? [] : generateInitialInventory();
+      }
+
+      updateTopDate();
+      renderTagOptions();
+      renderTaskList();
+      renderLongTermCards();
+      renderInventoryCards();
+      renderDashboard();
+    }
+
+    function generateDefaultHistory() {
+      const hist = {
+        't-weight': {},
+        't-water': {},
+        't-supplements': {},
+        't-walk': {},
+        't-expense': {},
+        't-pet-teeth': {}
+      };
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+
+      for (let d = 1; d <= 30; d++) {
+        const dIso = `${y}-${m}-${String(d).padStart(2, '0')}`;
+        if (d % 6 !== 0) hist['t-weight'][dIso] = { done: true, value: 49, time: '07:12' };
+        if (d % 5 !== 0) hist['t-water'][dIso] = { done: true, value: 2000, time: '17:30' };
+        if (d % 7 !== 0) hist['t-supplements'][dIso] = { done: true, time: '12:45' };
+        if (d % 4 !== 0) hist['t-walk'][dIso] = { done: true, time: '20:15' };
+        hist['t-expense'][dIso] = { done: true, time: '21:40' };
+        if (d % 2 === 1) hist['t-pet-teeth'][dIso] = { done: true, time: '22:15' };
+      }
+      return hist;
+    }
+
+    function updateTopDate() {
+      const d = new Date();
+      const days = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+      document.getElementById('topBarDate').innerText = `${d.getMonth() + 1}月${d.getDate()}日 ${days[d.getDay()]}`;
+    }
+
+    // ==========================================
+    // TAB NAVIGATION & SMART FAB
+    // ==========================================
+    function switchTab(tabId) {
+      currentTab = tabId;
+      const tabs = ['tasks', 'longterm', 'inventory', 'dashboard', 'settings'];
+      tabs.forEach(t => {
+        const el = document.getElementById(`view-${t}`);
+        if (el) el.classList.toggle('hidden', t !== tabId);
+
+        const navBtn = document.getElementById(`nav-${t}`);
+        if (navBtn) {
+          if (t === tabId) {
+            navBtn.className = 'touch-target nav-btn flex flex-col items-center justify-center py-1 text-morandi dark:text-morandi-light font-bold cursor-pointer';
+          } else {
+            navBtn.className = 'touch-target nav-btn flex flex-col items-center justify-center py-1 text-slate-500 dark:text-slate-400 font-medium cursor-pointer';
+          }
+        }
+      });
+
+      const titles = {
+        tasks: '今日生活作息打卡',
+        longterm: '長期健康與紀念日追蹤',
+        inventory: '美妝保養與效期庫存',
+        dashboard: '習慣達成成就儀表板',
+        settings: '系統設定與資料安全'
+      };
+      document.getElementById('appHeaderTitle').innerText = titles[tabId] || '生活與效期管家';
+
+      const fabBtn = document.getElementById('smartFabBtn');
+      const fabIcon = document.getElementById('smartFabIcon');
+      if (tabId === 'inventory') {
+        fabBtn.className = 'touch-target fixed bottom-20 right-4 sm:right-6 z-40 w-14 h-14 rounded-2xl bg-amber-600 hover:bg-amber-500 text-white shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer ring-4 ring-black/10 dark:ring-white/10';
+        fabIcon.className = 'fa-solid fa-boxes-packing text-lg';
+        fabBtn.title = '新增庫存物品';
+      } else {
+        fabBtn.className = 'touch-target fixed bottom-20 right-4 sm:right-6 z-40 w-14 h-14 rounded-2xl bg-morandi dark:bg-morandi-light text-white shadow-xl flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer ring-4 ring-black/10 dark:ring-white/10';
+        fabIcon.className = 'fa-solid fa-plus text-lg';
+        fabBtn.title = '新增任務或追蹤';
+      }
+
+      if (tabId === 'tasks') renderTaskList();
+      if (tabId === 'longterm') renderLongTermCards();
+      if (tabId === 'inventory') renderInventoryCards();
+      if (tabId === 'dashboard') renderDashboard();
+    }
+
+    function handleSmartFabClick() {
+      if (currentTab === 'inventory') {
+        openItemModal();
+      } else {
+        openCreateTask();
+      }
+    }
+
+    // ==========================================
+    // MODULE A: 今日打卡 (Daily Tracker & Timeline)
+    // ==========================================
+    function changeSelectedDate(deltaDays) {
+      selectedDate = new Date(selectedDate.getTime() + deltaDays * 86400000);
+      renderTaskList();
+    }
+
+    function resetToToday() {
+      selectedDate = new Date();
+      renderTaskList();
+    }
+
+    function setTaskViewMode(mode) {
+      taskViewMode = mode;
+      safeSet(KEY_VIEW_MODE, mode);
+      updateViewModeUi();
+      renderTaskList();
+    }
+
+    function updateViewModeUi() {
+      const btnTimeline = document.getElementById('viewModeBtn-timeline');
+      const btnList = document.getElementById('viewModeBtn-list');
+      if (!btnTimeline || !btnList) return;
+
+      if (taskViewMode === 'timeline') {
+        btnTimeline.className = 'px-2.5 py-1.5 rounded-lg font-bold bg-morandi dark:bg-morandi-light text-white text-[11px] flex items-center gap-1 shadow-xs transition-all cursor-pointer whitespace-nowrap';
+        btnList.className = 'px-2.5 py-1.5 rounded-lg font-medium text-slate-500 dark:text-slate-400 text-[11px] flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap';
+      } else {
+        btnList.className = 'px-2.5 py-1.5 rounded-lg font-bold bg-morandi dark:bg-morandi-light text-white text-[11px] flex items-center gap-1 shadow-xs transition-all cursor-pointer whitespace-nowrap';
+        btnTimeline.className = 'px-2.5 py-1.5 rounded-lg font-medium text-slate-500 dark:text-slate-400 text-[11px] flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap';
+      }
+    }
+
+    function isTaskScheduledOnDate(task, dateObj) {
+      if (task.categoryType === 'longterm') return false;
+
+      const dow = dateObj.getDay();
+      if (task.periodType === 'weekday') {
+        if (!Array.isArray(task.weekdays) || task.weekdays.length === 0) return true;
+        return task.weekdays.includes(dow);
+      }
+
+      if (task.frequency && task.frequency > 1) {
+        const epoch = new Date('2026-01-01T00:00:00Z').getTime();
+        const cur = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate()).getTime();
+        const diffDays = Math.round((cur - epoch) / 86400000);
+        return diffDays % task.frequency === 0;
+      }
+      return true;
+    }
+
+    // Helper: Smartly retrieves the most recent logged value for a task without decimals for weight
+    function getLatestTaskNumber(taskId, targetDateIso) {
+      const task = tasks.find(t => t.id === taskId);
+      const isWeight = taskId === 't-weight' || task?.unit === 'kg' || task?.name?.includes('體重');
+      const isWater = task?.unit === 'cc' || task?.name?.includes('水');
+      const fallback = isWeight ? 49 : (isWater ? 2000 : 0);
+
+      if (!history[taskId]) return fallback;
+
+      // 1. If target date itself has a recorded value
+      if (targetDateIso && history[taskId][targetDateIso]?.value !== undefined) {
+        const val = history[taskId][targetDateIso].value;
+        return isWeight ? Math.round(val) : val;
+      }
+
+      // 2. Look for the most recent recorded date before or on targetDate
+      const pastDates = Object.keys(history[taskId])
+        .filter(d => history[taskId][d]?.value !== undefined && (!targetDateIso || d <= targetDateIso))
+        .sort()
+        .reverse();
+
+      if (pastDates.length > 0) {
+        const val = history[taskId][pastDates[0]].value;
+        return isWeight ? Math.round(val) : val;
+      }
+
+      // 3. Fallback to any recent recorded date across history
+      const allDates = Object.keys(history[taskId])
+        .filter(d => history[taskId][d]?.value !== undefined)
+        .sort()
+        .reverse();
+
+      if (allDates.length > 0) {
+        const val = history[taskId][allDates[0]].value;
+        return isWeight ? Math.round(val) : val;
+      }
+
+      return fallback;
+    }
+
+    function renderTaskList() {
+      const container = document.getElementById('taskListContainer');
+      const searchQ = (document.getElementById('taskSearchInput')?.value || '').toLowerCase();
+      const tagFilter = document.getElementById('taskTagFilter')?.value || 'all';
+      const curIso = formatDateIso(selectedDate);
+      const isToday = curIso === getTodayIso();
+
+      const days = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
+      document.getElementById('currentDateDisplay').innerText = `${selectedDate.getMonth() + 1}月${selectedDate.getDate()}日 ${days[selectedDate.getDay()]}`;
+      const todayBadge = document.getElementById('todayTagBadge');
+      if (todayBadge) {
+        todayBadge.innerText = isToday ? '今天' : (selectedDate > new Date() ? '未來' : '補打卡');
+        todayBadge.className = isToday 
+          ? 'text-[9px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/70 px-1.5 py-0.5 rounded whitespace-nowrap' 
+          : 'text-[9px] font-bold text-morandi dark:text-morandi-light bg-morandi-soft px-1.5 py-0.5 rounded whitespace-nowrap';
+      }
+
+      let dayTasks = tasks.filter(t => {
+        if (!isTaskScheduledOnDate(t, selectedDate)) return false;
+        if (searchQ && !t.name.toLowerCase().includes(searchQ) && !t.note?.toLowerCase().includes(searchQ)) return false;
+        if (tagFilter !== 'all' && t.tagId !== tagFilter) return false;
+        return true;
+      });
+
+      dayTasks.sort((a, b) => (a.scheduledTime || '12:00').localeCompare(b.scheduledTime || '12:00'));
+
+      const doneCount = dayTasks.filter(t => history[t.id]?.[curIso]?.done).length;
+      const totalCount = dayTasks.length;
+      const pct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+      
+      document.getElementById('dailyProgressBadge').innerText = `${doneCount} / ${totalCount} 完成`;
+      const hintEl = document.getElementById('dailyProgressHint');
+      if (hintEl) {
+        if (totalCount > 0 && doneCount === totalCount) hintEl.innerText = '太棒了！今日全部達標 🎉';
+        else if (pct >= 50) hintEl.innerText = '進度過半，繼續保持！💪';
+        else hintEl.innerText = '持續累積好習慣 ✨';
+      }
+      const circleEl = document.getElementById('dailyProgressCircle');
+      if (circleEl) {
+        const circ = 163.36;
+        const offset = circ - (circ * pct / 100);
+        circleEl.style.strokeDashoffset = offset;
+      }
+      const pctText = document.getElementById('dailyProgressPercentText');
+      if (pctText) pctText.innerText = `${pct}%`;
+
+      if (dayTasks.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white dark:bg-[#1E222A] rounded-3xl p-8 text-center border border-slate-200 dark:border-slate-800">
+            <div class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 mx-auto flex items-center justify-center mb-3">
+              <i class="fa-solid fa-mug-hot text-lg"></i>
+            </div>
+            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 mb-1">此日無排定的作息項目</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+              目前已自動過濾未排定在今天的項目（如平日專屬或特定間隔任務）。
+            </p>
+          </div>
+        `;
+        return;
+      }
+
+      if (taskViewMode === 'timeline') {
+        renderTimelineView(container, dayTasks, curIso);
+      } else {
+        renderCompactListView(container, dayTasks, curIso);
+      }
+    }
+
+    function renderTimelineView(container, taskList, dateIso) {
+      let html = '<div class="relative pl-6 sm:pl-8 space-y-4 my-2">';
+      html += `<div class="absolute left-3 top-3 bottom-3 w-0.5 bg-slate-200 dark:bg-slate-800"></div>`;
+
+      taskList.forEach(t => {
+        const tag = taskTags.find(x => x.id === t.tagId);
+        const record = history[t.id]?.[dateIso];
+        const isDone = !!record?.done;
+        const color = t.accentColor || tag?.color || '#4A88D9';
+        const timeLabel = t.scheduledTime || '全天';
+        const slotName = t.timeSlotName || '日常';
+
+        let numberWidget = '';
+        if (t.trackingMode === 'number') {
+          const isWeight = t.id === 't-weight' || t.unit === 'kg' || t.name.includes('體重');
+          const isWater = t.unit === 'cc' || t.name.includes('水');
+          const latestVal = getLatestTaskNumber(t.id, dateIso);
+          const currentVal = record?.value !== undefined 
+            ? (isWeight ? Math.round(record.value) : record.value) 
+            : latestVal;
+
+          numberWidget = `
+            <div class="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center gap-2">
+              <span class="text-[11px] text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">記錄數值：</span>
+              <div class="flex items-center gap-1.5 flex-1 min-w-[200px]">
+                <input type="number" id="numInput-${t.id}" step="${isWeight ? '1' : (isWater ? '50' : '1')}" value="${currentVal}" placeholder="${latestVal}" class="w-24 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#16181D] text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-morandi">
+                <span class="text-xs text-slate-500 dark:text-slate-400 font-bold whitespace-nowrap">${t.unit || ''}</span>
+                ${isWater ? `<button type="button" onclick="quickAddWater('${t.id}', 500)" class="touch-target px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-600 dark:text-slate-300 hover:bg-morandi hover:text-white cursor-pointer whitespace-nowrap">+500</button>` : ''}
+                <button onclick="handleNumberCheckin('${t.id}', '${dateIso}')" class="touch-target ml-auto px-3.5 py-1.5 rounded-xl ${isDone ? 'bg-emerald-600 text-white' : 'bg-morandi dark:bg-morandi-light text-white'} text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer whitespace-nowrap">
+                  ${isDone ? '<i class="fa-solid fa-check"></i> 更新' : '確認打卡'}
+                </button>
+              </div>
+            </div>
+          `;
+        }
+
+        html += `
+          <div class="relative group">
+            <div class="absolute -left-6 sm:-left-8 top-3.5 w-6 h-6 rounded-full flex items-center justify-center transition-all ${
+              isDone 
+                ? 'bg-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.5)] ring-4 ring-[#F5F7FA] dark:ring-[#16181D]' 
+                : 'bg-white dark:bg-[#1E222A] border-2 border-morandi dark:border-morandi-light text-morandi dark:text-morandi-light ring-4 ring-[#F5F7FA] dark:ring-[#16181D]'
+            }">
+              <i class="fa-solid ${isDone ? 'fa-check text-[10px]' : 'fa-circle text-[6px]'}"></i>
+            </div>
+
+            <div class="bg-white dark:bg-[#1E222A] rounded-2xl p-4 border ${isDone ? 'border-emerald-300/60 dark:border-emerald-900/60 bg-emerald-50/10' : 'border-slate-200/80 dark:border-slate-800'} shadow-xs transition-all">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="font-mono text-xs font-extrabold px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-[#16181D] text-slate-700 dark:text-slate-300 flex items-center gap-1 shrink-0 whitespace-nowrap">
+                    <i class="fa-regular fa-clock text-[10px] text-morandi dark:text-morandi-light"></i>
+                    <span>${timeLabel}</span>
+                  </span>
+                  <span class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">${slotName}</span>
+                </div>
+
+                <!-- Touch target enlarged for Edit & Trash buttons with event.stopPropagation -->
+                <div class="flex items-center gap-1 shrink-0 relative z-10">
+                  ${t.enableLinePush ? `<span class="text-[10px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded font-bold flex items-center gap-1 whitespace-nowrap mr-1"><i class="fa-solid fa-bell text-[9px]"></i> LINE</span>` : ''}
+                  <button type="button" onclick="event.stopPropagation(); openCreateTask('${t.id}')" class="touch-target w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center transition-all cursor-pointer active:scale-95" title="編輯任務">
+                    <i class="fa-solid fa-pen text-xs"></i>
+                  </button>
+                  <button type="button" onclick="event.stopPropagation(); deleteTask('${t.id}')" class="touch-target w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-red-500/15 text-slate-400 hover:text-red-500 flex items-center justify-center transition-all cursor-pointer active:scale-95" title="刪除任務">
+                    <i class="fa-solid fa-trash text-xs"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3">
+                <button type="button" onclick="handlePrimaryCheckin('${t.id}', '${dateIso}')" class="touch-target w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all cursor-pointer ${
+                  isDone 
+                    ? 'bg-emerald-500 text-white shadow-sm' 
+                    : 'border-2 border-slate-300 dark:border-slate-600 hover:border-emerald-500 text-transparent active:scale-95'
+                }">
+                  <i class="fa-solid fa-check text-sm"></i>
+                </button>
+
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <h4 class="text-sm font-bold text-slate-900 dark:text-slate-100 ${isDone ? 'line-through text-slate-400 dark:text-slate-500' : ''} truncate">${t.name}</h4>
+                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap" style="background-color: ${color}20; color: ${color}">
+                      ${tag ? tag.icon : '🌱'} ${tag ? tag.name : '日常'}
+                    </span>
+                  </div>
+
+                  ${t.note ? `<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">${t.note}</p>` : ''}
+
+                  <div class="text-[11px] text-slate-400 mt-1.5 flex items-center gap-2 flex-wrap">
+                    ${isDone 
+                      ? `<span class="text-emerald-500 font-bold flex items-center gap-1 whitespace-nowrap"><i class="fa-solid fa-circle-check text-[10px]"></i> 已打卡完成</span>` 
+                      : `<span class="text-slate-400 whitespace-nowrap">待執行</span>`}
+                    ${record?.time ? `<span class="text-slate-400 whitespace-nowrap">· 打卡時間：${record.time}</span>` : ''}
+                    ${record?.value !== undefined ? `<span class="text-morandi dark:text-morandi-light font-bold whitespace-nowrap">· 數值：${(t.id === 't-weight' || t.unit === 'kg' || t.name.includes('體重')) ? Math.round(record.value) : record.value} ${t.unit || ''}</span>` : ''}
+                  </div>
+                </div>
+              </div>
+              ${numberWidget}
+            </div>
+          </div>
+        `;
+      });
+
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    function renderCompactListView(container, taskList, dateIso) {
+      container.innerHTML = taskList.map(t => {
+        const tag = taskTags.find(x => x.id === t.tagId);
+        const record = history[t.id]?.[dateIso];
+        const isDone = !!record?.done;
+        const color = t.accentColor || tag?.color || '#4A88D9';
+
+        return `
+          <div class="bg-white dark:bg-[#1E222A] rounded-2xl p-3.5 border ${isDone ? 'border-emerald-300/60 dark:border-emerald-950 bg-emerald-50/15' : 'border-slate-200/80 dark:border-slate-800'} shadow-xs flex items-center gap-3">
+            <button type="button" onclick="handlePrimaryCheckin('${t.id}', '${dateIso}')" class="touch-target w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all cursor-pointer ${
+              isDone ? 'bg-emerald-500 text-white shadow-xs' : 'border-2 border-slate-300 dark:border-slate-600 text-transparent'
+            }">
+              <i class="fa-solid fa-check text-xs"></i>
+            </button>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] font-mono text-slate-500 font-bold whitespace-nowrap">${t.scheduledTime || ''}</span>
+                <h4 class="text-xs font-bold text-slate-900 dark:text-slate-100 ${isDone ? 'line-through text-slate-400' : ''} truncate">${t.name}</h4>
+                <span class="text-[9px] px-1.5 py-0.2 rounded font-medium whitespace-nowrap" style="background-color: ${color}20; color: ${color}">${tag?.name || ''}</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5 truncate">
+                ${record?.time ? `打卡於 ${record.time}` : (t.note || '每日習慣')}
+                ${record?.value !== undefined ? ` · 紀錄值：${(t.id === 't-weight' || t.unit === 'kg' || t.name.includes('體重')) ? Math.round(record.value) : record.value} ${t.unit || ''}` : ''}
+              </div>
+            </div>
+            <!-- Touch target enlarged for Edit & Trash buttons -->
+            <div class="flex items-center gap-1 shrink-0 relative z-10">
+              <button type="button" onclick="event.stopPropagation(); openCreateTask('${t.id}')" class="touch-target w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center transition-all cursor-pointer active:scale-95"><i class="fa-solid fa-pen text-xs"></i></button>
+              <button type="button" onclick="event.stopPropagation(); deleteTask('${t.id}')" class="touch-target w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-slate-400 hover:text-red-500 flex items-center justify-center transition-all cursor-pointer active:scale-95"><i class="fa-solid fa-trash text-xs"></i></button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function quickAddWater(taskId, amount) {
+      const input = document.getElementById(`numInput-${taskId}`);
+      if (input) {
+        const cur = parseFloat(input.value) || 0;
+        input.value = cur + amount;
+      }
+    }
+
+    function handlePrimaryCheckin(taskId, dateIso) {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      if (task.trackingMode === 'number') {
+        const input = document.getElementById(`numInput-${taskId}`);
+        if (input) input.focus();
+        return;
+      }
+
+      if (!history[taskId]) history[taskId] = {};
+      const current = history[taskId][dateIso];
+
+      if (current?.done) {
+        delete history[taskId][dateIso];
+        showToast(`已取消「${task.name}」打卡`);
+        if (task.enableLinePush) triggerGasCheckinCancel(task, dateIso);
+      } else {
+        const d = new Date();
+        const timeNow = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        history[taskId][dateIso] = { done: true, time: timeNow };
+        showToast(task.trackingMode === 'timestamp' ? `⏱️ 已自動記錄時間 (${timeNow})！` : `🎉「${task.name}」打卡成功！`);
+
+        if (task.enableLinePush) triggerGasPush(task, dateIso, timeNow);
+      }
+
+      safeSet(KEY_HISTORY, JSON.stringify(history));
+      renderTaskList();
+      renderDashboard();
+    }
+
+    function handleNumberCheckin(taskId, dateIso) {
+      const task = tasks.find(t => t.id === taskId);
+      const input = document.getElementById(`numInput-${taskId}`);
+      let val = parseFloat(input?.value);
+      if (isNaN(val)) return showToast('請先輸入有效數字！');
+
+      const isWeight = taskId === 't-weight' || task?.unit === 'kg' || task?.name?.includes('體重');
+      if (isWeight) {
+        val = Math.round(val);
+        if (input) input.value = val;
+      }
+
+      const d = new Date();
+      const timeNow = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+
+      if (!history[taskId]) history[taskId] = {};
+      history[taskId][dateIso] = { done: true, value: val, time: timeNow };
+
+      safeSet(KEY_HISTORY, JSON.stringify(history));
+      renderTaskList();
+      renderDashboard();
+      showToast(`✅ 已記錄 ${val} ${task?.unit || ''} 並打卡成功！`);
+
+      if (task?.enableLinePush) triggerGasPush(task, dateIso, timeNow, val);
+    }
+
+    // ==========================================
+    // GAS CLOUD SYNC & LINE WEBHOOK LOGIC
+    // ==========================================
+    // 1. 打卡完成：即時回傳今日打卡成功紀錄至試算表 (使定時巡檢器知悉已打卡，不重複打擾)
+    async function triggerGasPush(task, dateIso, timeStr, value = null) {
+      const url = safeGet(KEY_GAS_URL);
+      if (!url) return;
+      try {
+        await fetch(url, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'LOG_CHECKIN',
+            taskId: task.id,
+            taskName: task.name,
+            date: dateIso,
+            time: timeStr,
+            value: value,
+            unit: task.unit || '',
+            category: task.categoryType,
+            frequency: task.frequency || 1,
+            isDone: true
+          }),
+          mode: 'no-cors'
+        });
+      } catch (e) {
+        console.error('GAS push error:', e);
+      }
+    }
+
+    // 2. 取消打卡：回傳取消狀態至試算表
+    async function triggerGasCheckinCancel(task, dateIso) {
+      const url = safeGet(KEY_GAS_URL);
+      if (!url) return;
+      try {
+        await fetch(url, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'CANCEL_CHECKIN',
+            taskId: task.id,
+            taskName: task.name,
+            date: dateIso,
+            isDone: false
+          }),
+          mode: 'no-cors'
+        });
+      } catch (e) {}
+    }
+
+    // 3. 新增/編輯任務時：自動將任務名稱、排程時間與 LINE 推播設定寫入試算表 Tasks 分頁
+    async function syncTaskToGas(task) {
+      const url = safeGet(KEY_GAS_URL);
+      if (!url) return;
+      try {
+        await fetch(url, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'SYNC_TASK',
+            task: {
+              id: task.id,
+              name: task.name,
+              scheduledTime: task.scheduledTime || '',
+              enableLinePush: !!task.enableLinePush,
+              timeSlotName: task.timeSlotName || '',
+              categoryType: task.categoryType || 'habit',
+              unit: task.unit || '',
+              note: task.note || '',
+              updatedAt: new Date().toISOString()
+            }
+          }),
+          mode: 'no-cors'
+        });
+        showToast(`☁️ 已將「${task.name}」(${task.scheduledTime || '日常'}) 自動寫入 Google 試算表 Tasks 分頁！`);
+      } catch (e) {
+        console.warn('Sync task to GAS error:', e);
+      }
+    }
+
+    // 4. 刪除任務時：從試算表 Tasks 分頁移除
+    async function syncTaskDeletionToGas(taskId) {
+      const url = safeGet(KEY_GAS_URL);
+      if (!url) return;
+      try {
+        await fetch(url, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'DELETE_TASK',
+            taskId: taskId
+          }),
+          mode: 'no-cors'
+        });
+      } catch (e) {
+        console.warn('Sync delete task error:', e);
+      }
+    }
+
+    // 5. 手動一鍵同步所有任務與美妝庫存到試算表
+    async function syncAllToGas() {
+      const url = safeGet(KEY_GAS_URL);
+      if (!url) return showToast('請先填寫並儲存 GAS Web App 網址！');
+      showToast('正在同步所有作息任務與美妝庫存至 Google 試算表...');
+      try {
+        const payloadTasks = tasks.map(t => ({
+          id: t.id,
+          name: t.name,
+          scheduledTime: t.scheduledTime || '',
+          enableLinePush: !!t.enableLinePush,
+          timeSlotName: t.timeSlotName || '',
+          categoryType: t.categoryType || 'habit',
+          unit: t.unit || '',
+          note: t.note || ''
+        }));
+
+        const payloadInventory = inventoryItems.map(i => ({
+          id: i.id,
+          name: i.name,
+          status: i.status,
+          expDate: i.expDate,
+          paoMonths: i.paoMonths || 0,
+          note: i.note || ''
+        }));
+
+        const todayIso = getTodayIso();
+        const todayStatus = {};
+        tasks.forEach(t => {
+          todayStatus[t.id] = {
+            name: t.name,
+            done: !!history[t.id]?.[todayIso]?.done,
+            time: history[t.id]?.[todayIso]?.time || '',
+            value: history[t.id]?.[todayIso]?.value
+          };
+        });
+
+        await fetch(url, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'SYNC_ALL',
+            tasks: payloadTasks,
+            inventory: payloadInventory,
+            todayHistory: todayStatus,
+            date: todayIso
+          }),
+          mode: 'no-cors'
+        });
+        showToast('🎉 成功！全部任務與效期已完整寫入 Google 試算表！');
+      } catch (e) {
+        showToast('同步失敗，請檢查網址或連線權限');
+      }
+    }
+
+    // ==========================================
+    // MODULE A: 長期追蹤 (Long-Term & Events)
+    // ==========================================
+    function setLongTermFilterType(type) {
+      longTermFilterType = type;
+      ['all', 'countdown', 'accumulation'].forEach(t => {
+        const btn = document.getElementById(`ltPill-${t}`);
+        if (!btn) return;
+        if (t === type) {
+          btn.className = 'px-3 py-1 rounded-full font-bold bg-morandi dark:bg-morandi-light text-white cursor-pointer whitespace-nowrap';
+        } else {
+          btn.className = 'px-3 py-1 rounded-full font-medium bg-slate-100 dark:bg-[#16181D] text-slate-600 dark:text-slate-400 cursor-pointer whitespace-nowrap';
+        }
+      });
+      renderLongTermCards();
+    }
+
+    function renderLongTermCards() {
+      const container = document.getElementById('longTermCardsContainer');
+      const searchQ = (document.getElementById('longTermSearchInput')?.value || '').toLowerCase();
+      const tagFilter = document.getElementById('longTermTagFilter')?.value || 'all';
+
+      let longTermTasks = tasks.filter(t => t.categoryType === 'longterm' || (t.frequency && t.frequency > 30));
+
+      if (longTermFilterType === 'countdown') {
+        longTermTasks = longTermTasks.filter(t => (t.cardMode || 'countdown') === 'countdown');
+      } else if (longTermFilterType === 'accumulation') {
+        longTermTasks = longTermTasks.filter(t => t.cardMode === 'accumulation');
+      }
+
+      if (searchQ) {
+        longTermTasks = longTermTasks.filter(t => t.name.toLowerCase().includes(searchQ) || t.note?.toLowerCase().includes(searchQ));
+      }
+      if (tagFilter !== 'all') {
+        longTermTasks = longTermTasks.filter(t => t.tagId === tagFilter);
+      }
+
+      if (longTermTasks.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white dark:bg-[#1E222A] rounded-3xl p-8 text-center border border-slate-200 dark:border-slate-800">
+            <p class="text-xs text-slate-500">目前尚無符合條件的長期追蹤或紀念日項目，點擊右下角按鈕立即新增！</p>
+          </div>
+        `;
+        return;
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      container.innerHTML = longTermTasks.map(t => {
+        const tag = taskTags.find(x => x.id === t.tagId);
+        const cardMode = t.cardMode || 'countdown';
+
+        if (cardMode === 'countdown') {
+          const startDate = new Date(t.startDate || '2026-09-11');
+          startDate.setHours(0, 0, 0, 0);
+          const cycleDays = t.cycleDays || 180;
+          
+          const targetDate = new Date(startDate.getTime() + cycleDays * 86400000);
+          const remainDays = Math.ceil((targetDate.getTime() - today.getTime()) / 86400000);
+          const passedDays = Math.max(0, cycleDays - remainDays);
+          const progressPct = Math.min(100, Math.max(0, Math.round((passedDays / cycleDays) * 100)));
+
+          return `
+            <div class="bg-white dark:bg-[#1E222A] rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-[10px] font-bold text-morandi dark:text-morandi-light bg-morandi-soft px-2 py-0.5 rounded-md whitespace-nowrap">
+                      ${tag ? tag.name : '醫療保養'} · 週期 ${cycleDays} 天
+                    </span>
+                    ${t.enableLinePush ? `<span class="text-[10px] text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded font-bold flex items-center gap-1 whitespace-nowrap"><i class="fa-solid fa-bell text-[9px]"></i> LINE</span>` : ''}
+                  </div>
+                  <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 mt-1 truncate">${t.name}</h3>
+                  ${t.note ? `<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">${t.note}</p>` : ''}
+                </div>
+
+                <!-- Touch target enlarged for Edit & Trash buttons -->
+                <div class="flex items-center gap-1 shrink-0 relative z-10">
+                  <button type="button" onclick="event.stopPropagation(); openCreateTask('${t.id}')" class="touch-target w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95" title="編輯追蹤">
+                    <i class="fa-solid fa-pen text-xs"></i>
+                  </button>
+                  <button type="button" onclick="event.stopPropagation(); deleteTask('${t.id}')" class="touch-target w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-red-500/15 text-slate-400 hover:text-red-500 flex items-center justify-center transition-all cursor-pointer active:scale-95" title="刪除追蹤">
+                    <i class="fa-solid fa-trash text-xs"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="my-4 flex items-baseline gap-2">
+                <span class="text-4xl font-extrabold font-mono text-slate-900 dark:text-slate-100 tracking-tight">
+                  ${remainDays > 0 ? remainDays : 0}
+                </span>
+                <span class="text-xs text-slate-500 dark:text-slate-400 font-semibold whitespace-nowrap">
+                  ${remainDays > 0 ? '天後到期' : '⚠️ 已到期，請安排執行！'}
+                </span>
+              </div>
+
+              <div class="space-y-1.5">
+                <div class="w-full bg-slate-100 dark:bg-[#16181D] h-2.5 rounded-full overflow-hidden p-0.5">
+                  <div class="h-full bg-gradient-to-r from-morandi via-morandi-light to-emerald-400 rounded-full transition-all duration-500" style="width: ${progressPct}%"></div>
+                </div>
+                <div class="flex justify-between text-[11px] text-slate-400 font-medium">
+                  <span class="truncate">起始：${t.startDate || '未設定'}</span>
+                  <span class="truncate">下次：${targetDate.toISOString().split('T')[0]}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        } else {
+          const startDate = new Date(t.startDate || '2023-11-05');
+          startDate.setHours(0, 0, 0, 0);
+          const passedDays = Math.max(0, Math.floor((today.getTime() - startDate.getTime()) / 86400000));
+
+          let nextAnniv = new Date(today.getFullYear(), startDate.getMonth(), startDate.getDate());
+          if (nextAnniv < today) {
+            nextAnniv.setFullYear(today.getFullYear() + 1);
+          }
+          const daysToNextAnniv = Math.ceil((nextAnniv.getTime() - today.getTime()) / 86400000);
+
+          return `
+            <div class="bg-gradient-to-br from-[#22262E] to-[#1E222A] text-white rounded-3xl p-5 border border-slate-700/60 shadow-md relative overflow-hidden">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-[10px] font-bold text-rose-300 bg-rose-950/60 px-2 py-0.5 rounded-md whitespace-nowrap">
+                      ${tag ? tag.name : '紀念里程碑'} · 始於 ${t.startDate}
+                    </span>
+                    ${t.enableLinePush ? `<span class="text-[10px] text-emerald-400 bg-emerald-950/60 px-1.5 py-0.5 rounded font-bold flex items-center gap-1 whitespace-nowrap"><i class="fa-solid fa-bell text-[9px]"></i> LINE</span>` : ''}
+                  </div>
+                  <h3 class="text-base font-bold text-slate-100 mt-1 truncate">${t.name}</h3>
+                  ${t.note ? `<p class="text-xs text-slate-400 mt-0.5">${t.note}</p>` : ''}
+                </div>
+
+                <!-- Touch target enlarged for Edit & Trash buttons -->
+                <div class="flex items-center gap-1 shrink-0 relative z-10">
+                  <button type="button" onclick="event.stopPropagation(); openCreateTask('${t.id}')" class="touch-target w-10 h-10 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95" title="編輯紀念日">
+                    <i class="fa-solid fa-pen text-xs"></i>
+                  </button>
+                  <button type="button" onclick="event.stopPropagation(); deleteTask('${t.id}')" class="touch-target w-10 h-10 rounded-xl bg-slate-800/80 hover:bg-red-500/20 text-slate-400 hover:text-red-400 flex items-center justify-center transition-all cursor-pointer active:scale-95" title="刪除紀念日">
+                    <i class="fa-solid fa-trash text-xs"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="my-4">
+                <div class="text-[11px] text-slate-400 font-medium">我們已經相伴走過</div>
+                <div class="flex items-baseline gap-2 mt-0.5">
+                  <span class="text-4xl font-extrabold font-mono text-white tracking-tight">${passedDays.toLocaleString()}</span>
+                  <span class="text-xs text-rose-300 font-semibold whitespace-nowrap">天</span>
+                </div>
+              </div>
+
+              <div class="pt-3 border-t border-slate-700/50 flex items-center justify-between text-xs text-slate-300">
+                <span class="flex items-center gap-1.5 text-[11px] truncate">
+                  <i class="fa-solid fa-cake-candles text-amber-400 shrink-0"></i>
+                  <span>距離下次週年紀念日：</span>
+                </span>
+                <span class="font-bold text-amber-300 font-mono whitespace-nowrap">${daysToNextAnniv === 0 ? '🎉 就是今天！' : `倒數 ${daysToNextAnniv} 天`}</span>
+              </div>
+            </div>
+          `;
+        }
+      }).join('');
+    }
+
+    // ==========================================
+    // MODULE B: 效期管理與美妝庫存 (IndexedDB & Logic)
+    // ==========================================
+    function setInventoryFilterStatus(status) {
+      inventoryFilterStatus = status;
+      ['all', 'sos', 'opened', 'unopened'].forEach(s => {
+        const btn = document.getElementById(`invPill-${s}`);
+        if (!btn) return;
+        if (s === status) {
+          btn.className = 'px-3 py-1 rounded-full font-bold bg-amber-600 text-white cursor-pointer whitespace-nowrap';
+        } else {
+          btn.className = 'px-3 py-1 rounded-full font-medium bg-slate-100 dark:bg-[#16181D] text-slate-600 dark:text-slate-400 cursor-pointer whitespace-nowrap';
+        }
+      });
+      renderInventoryCards();
+    }
+
+    function calculateItemExpiry(item) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const botExp = new Date(item.expDate || '2099-12-31');
+      botExp.setHours(0, 0, 0, 0);
+
+      let finalDeadline = botExp;
+      let effectiveRule = '瓶底效期';
+
+      if (item.status === 'opened' && item.openedDate && item.paoMonths && Number(item.paoMonths) > 0) {
+        const opened = new Date(item.openedDate);
+        opened.setHours(0, 0, 0, 0);
+        
+        const paoDeadline = new Date(opened);
+        paoDeadline.setMonth(paoDeadline.getMonth() + Number(item.paoMonths));
+
+        if (paoDeadline < botExp) {
+          finalDeadline = paoDeadline;
+          effectiveRule = `PAO 開封 ${item.paoMonths}M 效期`;
+        } else {
+          finalDeadline = botExp;
+          effectiveRule = '瓶底到期日 (早於 PAO)';
+        }
+      }
+
+      const daysLeft = Math.ceil((finalDeadline.getTime() - today.getTime()) / 86400000);
+      const isExpired = daysLeft <= 0;
+      const isExpiringSoon = daysLeft > 0 && daysLeft <= 30;
+
+      let daysToEmpty = 0;
+      let willWaste = false;
+      let wasteAmount = 0;
+
+      if (item.totalCapacity && item.dailyUsage && Number(item.dailyUsage) > 0) {
+        daysToEmpty = Math.ceil(Number(item.totalCapacity) / Number(item.dailyUsage));
+        if (daysToEmpty > daysLeft && daysLeft > 0) {
+          willWaste = true;
+          const usableBeforeExpiry = daysLeft * Number(item.dailyUsage);
+          wasteAmount = Math.max(0, Math.round((Number(item.totalCapacity) - usableBeforeExpiry) * 10) / 10);
+        }
+      }
+
+      const needsSos = item.status === 'opened' && (isExpiringSoon || willWaste);
+
+      return {
+        finalDeadline,
+        finalDeadlineIso: formatDateIso(finalDeadline),
+        daysLeft,
+        isExpired,
+        isExpiringSoon,
+        effectiveRule,
+        willWaste,
+        wasteAmount,
+        needsSos
+      };
+    }
+
+    function renderInventoryCards() {
+      const container = document.getElementById('inventoryCardsContainer');
+      const searchQ = (document.getElementById('inventorySearchInput')?.value || '').toLowerCase();
+      const tagFilter = document.getElementById('inventoryTagFilter')?.value || 'all';
+
+      const annotated = inventoryItems.map(item => ({
+        ...item,
+        metrics: calculateItemExpiry(item)
+      }));
+
+      annotated.sort((a, b) => a.metrics.daysLeft - b.metrics.daysLeft);
+
+      const expiredOrSos = annotated.filter(x => x.metrics.isExpired || x.metrics.needsSos).length;
+      const openedCount = annotated.filter(x => x.status === 'opened').length;
+      const unopenedCount = annotated.filter(x => x.status === 'unopened').length;
+
+      document.getElementById('invStatExpired').innerText = expiredOrSos;
+      document.getElementById('invStatOpened').innerText = openedCount;
+      document.getElementById('invStatUnopened').innerText = unopenedCount;
+
+      let filtered = annotated.filter(item => {
+        if (searchQ && !item.name.toLowerCase().includes(searchQ) && !item.note?.toLowerCase().includes(searchQ)) return false;
+        if (tagFilter !== 'all' && item.tagId !== tagFilter) return false;
+
+        if (inventoryFilterStatus === 'sos') {
+          return item.metrics.isExpired || item.metrics.needsSos;
+        } else if (inventoryFilterStatus === 'opened') {
+          return item.status === 'opened';
+        } else if (inventoryFilterStatus === 'unopened') {
+          return item.status === 'unopened';
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white dark:bg-[#1E222A] rounded-3xl p-8 text-center border border-slate-200 dark:border-slate-800">
+            <p class="text-xs text-slate-500">目前尚無庫存物品，點擊右下角懸浮按鈕新增！</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(item => {
+        const tag = itemTags.find(x => x.id === item.tagId);
+        const m = item.metrics;
+
+        let borderClass = 'border-slate-200/80 dark:border-slate-800';
+
+        if (m.isExpired) {
+          borderClass = 'border-red-400 dark:border-red-800/80 bg-red-50/15';
+        } else if (m.isExpiringSoon) {
+          borderClass = 'border-amber-400 dark:border-amber-800/80 bg-amber-50/15';
+        }
+
+        return `
+          <div class="bg-white dark:bg-[#1E222A] rounded-3xl p-4 sm:p-5 border ${borderClass} shadow-xs relative overflow-hidden transition-all">
+            <div class="flex items-start gap-3.5">
+              <!-- Thumbnail Image (1:1 Square) -->
+              <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 border border-slate-200 dark:border-slate-700/80 shadow-xs">
+                ${item.photoBase64 
+                  ? `<img src="${item.photoBase64}" alt="${item.name}" class="w-full h-full object-cover">` 
+                  : `<div class="w-full h-full flex items-center justify-center text-slate-400"><i class="fa-solid fa-bottle-droplet text-xl"></i></div>`}
+              </div>
+
+              <!-- Main Info -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-1">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-[10px] font-bold ${item.status === 'opened' ? 'text-sky-500 bg-sky-500/10' : 'text-emerald-500 bg-emerald-500/10'} px-2 py-0.5 rounded-md whitespace-nowrap">
+                      ${item.status === 'opened' ? '已開封' : '未開封'}
+                    </span>
+                    <span class="text-[10px] font-semibold text-slate-400 truncate">
+                      ${tag ? tag.name : '美妝物品'}
+                    </span>
+                  </div>
+
+                  <!-- Touch target enlarged for Edit & Trash buttons -->
+                  <div class="flex items-center gap-1 shrink-0 relative z-10">
+                    <button type="button" onclick="event.stopPropagation(); openItemModal('${item.id}')" class="touch-target w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-800 dark:hover:text-white flex items-center justify-center transition-all cursor-pointer active:scale-95" title="編輯物品"><i class="fa-solid fa-pen text-xs"></i></button>
+                    <button type="button" onclick="event.stopPropagation(); deleteInventoryItem('${item.id}')" class="touch-target w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-red-500/15 text-slate-400 hover:text-red-500 flex items-center justify-center transition-all cursor-pointer active:scale-95" title="刪除物品"><i class="fa-solid fa-trash text-xs"></i></button>
+                  </div>
+                </div>
+
+                <h3 class="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 mt-1 truncate">${item.name}</h3>
+
+                <!-- Deadline Badge & Rule -->
+                <div class="mt-1.5 flex items-baseline gap-1.5 flex-wrap">
+                  <span class="text-xs font-bold ${m.isExpired ? 'text-red-500' : (m.isExpiringSoon ? 'text-amber-500' : 'text-slate-700 dark:text-slate-300')} whitespace-nowrap">
+                    ${m.isExpired ? '⚠️ 已過期' : (m.isExpiringSoon ? `剩餘 ${m.daysLeft} 天到期！` : `剩餘 ${m.daysLeft} 天`)}
+                  </span>
+                  <span class="text-[10px] text-slate-400 font-mono whitespace-nowrap">（死線：${m.finalDeadlineIso}）</span>
+                </div>
+
+                <div class="text-[10px] text-slate-400 mt-0.5 truncate">
+                  基準：${m.effectiveRule}
+                  ${item.paoMonths ? ` · PAO ${item.paoMonths}M` : ''}
+                </div>
+              </div>
+            </div>
+
+            <!-- Capacity Depletion Alert & SOS Rescue Button -->
+            ${m.willWaste ? `
+              <div class="mt-3 p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
+                <div class="flex items-center gap-1.5 text-red-500 dark:text-red-400 font-semibold text-[11px]">
+                  <i class="fa-solid fa-triangle-exclamation text-xs animate-bounce shrink-0"></i>
+                  <span>依每日用量，過期恐剩餘 <strong>${m.wasteAmount} ${item.unit || 'ml'}</strong>！</span>
+                </div>
+                <button type="button" onclick="event.stopPropagation(); triggerHusbandSos('${item.id}')" class="touch-target px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shrink-0 active:scale-95 transition-all shadow-xs cursor-pointer flex items-center gap-1.5 whitespace-nowrap">
+                  <span>🚨 呼叫老公幫忙用</span>
+                </button>
+              </div>
+            ` : (m.isExpiringSoon && item.status === 'opened' ? `
+              <div class="mt-3 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs">
+                <span class="text-[11px] text-amber-500 font-medium">即將到期，記得勤勞使用！</span>
+                <button type="button" onclick="event.stopPropagation(); triggerHusbandSos('${item.id}')" class="touch-target px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shrink-0 active:scale-95 transition-all shadow-xs cursor-pointer flex items-center gap-1.5 whitespace-nowrap">
+                  <span>🚨 呼叫老公幫忙擦</span>
+                </button>
+              </div>
+            ` : '')}
+
+            ${item.note ? `<p class="text-[11px] text-slate-500 dark:text-slate-400 mt-2 pt-1 border-t border-slate-100 dark:border-slate-800 truncate">${item.note}</p>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function triggerHusbandSos(itemId) {
+      const item = inventoryItems.find(x => x.id === itemId);
+      if (!item) return;
+
+      const m = calculateItemExpiry(item);
+      const url = safeGet(KEY_GAS_URL);
+
+      showToast(`💌 正在向老公發送救援呼叫：「${item.name}」需要他幫忙用！`);
+
+      if (url) {
+        try {
+          await fetch(url, {
+            method: 'POST',
+            body: JSON.stringify({
+              action: 'SOS_HUSBAND_HELP',
+              itemName: item.name,
+              daysLeft: m.daysLeft,
+              deadline: m.finalDeadlineIso,
+              wasteAmount: m.wasteAmount,
+              unit: item.unit || 'ml',
+              timestamp: new Date().toISOString()
+            }),
+            mode: 'no-cors'
+          });
+          showToast(`✅ 已成功推播 LINE 給老公！請他今晚幫忙消耗～❤️`);
+        } catch (e) {
+          showToast(`已觸發呼救！(若未設定 GAS URL 僅顯示本地提醒)`);
+        }
+      } else {
+        showToast(`💡 提示：前往「設定」填入 Google Apps Script Webhook 即可自動在 LINE 推播給老公！`);
+      }
+    }
+
+    function openItemModal(editId = null) {
+      document.getElementById('itemForm').reset();
+      document.getElementById('editingItemId').value = editId || '';
+      currentPhotoBase64 = '';
+
+      const photoPreview = document.getElementById('itemPhotoPreview');
+      const placeholder = document.getElementById('itemPhotoPlaceholder');
+      photoPreview.classList.add('hidden');
+      placeholder.classList.remove('hidden');
+
+      if (editId) {
+        const item = inventoryItems.find(x => x.id === editId);
+        if (item) {
+          document.getElementById('itemModalTitle').innerText = '編輯物品效期設定';
+          document.getElementById('itemNameInput').value = item.name;
+          document.getElementById('itemTagSelect').value = item.tagId || itemTags[0]?.id;
+          document.querySelector(`input[name="itemStatus"][value="${item.status}"]`).checked = true;
+          document.getElementById('itemExpDateInput').value = item.expDate;
+          if (item.openedDate) document.getElementById('itemOpenedDateInput').value = item.openedDate;
+          if (item.paoMonths !== undefined) document.getElementById('itemPaoInput').value = item.paoMonths;
+          if (item.totalCapacity) document.getElementById('itemCapacityInput').value = item.totalCapacity;
+          if (item.unit) document.getElementById('itemUnitInput').value = item.unit;
+          if (item.dailyUsage) document.getElementById('itemDailyUsageInput').value = item.dailyUsage;
+          if (item.note) document.getElementById('itemNoteInput').value = item.note;
+
+          if (item.photoBase64) {
+            currentPhotoBase64 = item.photoBase64;
+            photoPreview.src = item.photoBase64;
+            photoPreview.classList.remove('hidden');
+            placeholder.classList.add('hidden');
+          }
+        }
+      } else {
+        document.getElementById('itemModalTitle').innerText = '新增美妝/效期物品';
+        document.getElementById('itemExpDateInput').value = getTodayIso();
+        document.getElementById('itemOpenedDateInput').value = getTodayIso();
+      }
+
+      handleItemStatusChange();
+      document.getElementById('itemModal').classList.remove('hidden');
+      updateBodyScrollLock();
+    }
+
+    function closeItemModal() {
+      document.getElementById('itemModal').classList.add('hidden');
+      updateBodyScrollLock();
+    }
+
+    function handleItemStatusChange() {
+      const status = document.querySelector('input[name="itemStatus"]:checked').value;
+      const openedBlock = document.getElementById('itemOpenedConfigBlock');
+      if (status === 'opened') {
+        openedBlock.classList.remove('hidden');
+      } else {
+        openedBlock.classList.add('hidden');
+      }
+    }
+
+    async function handleItemPhotoSelected(e) {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      try {
+        showToast('正在即時壓縮裁切相片 (300x300)...');
+        const compressedBase64 = await compressAndCropToSquare(file);
+        currentPhotoBase64 = compressedBase64;
+
+        const photoPreview = document.getElementById('itemPhotoPreview');
+        const placeholder = document.getElementById('itemPhotoPlaceholder');
+        photoPreview.src = compressedBase64;
+        photoPreview.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+        showToast('✅ 照片壓縮完成！');
+      } catch (err) {
+        showToast('照片處理失敗，請換一張試試');
+      }
+    }
+
+    function removeCurrentItemPhoto() {
+      currentPhotoBase64 = '';
+      const photoPreview = document.getElementById('itemPhotoPreview');
+      const placeholder = document.getElementById('itemPhotoPlaceholder');
+      photoPreview.src = '';
+      photoPreview.classList.add('hidden');
+      placeholder.classList.remove('hidden');
+    }
+
+    async function handleSaveItem(e) {
+      e.preventDefault();
+      const editId = document.getElementById('editingItemId').value;
+      const name = document.getElementById('itemNameInput').value.trim();
+      const tagId = document.getElementById('itemTagSelect').value;
+      const status = document.querySelector('input[name="itemStatus"]:checked').value;
+      const expDate = document.getElementById('itemExpDateInput').value;
+      const openedDate = document.getElementById('itemOpenedDateInput').value;
+      const paoMonths = parseInt(document.getElementById('itemPaoInput').value) || 0;
+      const totalCapacity = parseFloat(document.getElementById('itemCapacityInput').value) || null;
+      const unit = document.getElementById('itemUnitInput').value.trim() || 'ml';
+      const dailyUsage = parseFloat(document.getElementById('itemDailyUsageInput').value) || null;
+      const note = document.getElementById('itemNoteInput').value.trim();
+
+      let finalPhoto = currentPhotoBase64;
+      if (!finalPhoto) {
+        const tag = itemTags.find(t => t.id === tagId);
+        finalPhoto = createMockThumbnail(name.slice(0, 4), tag?.icon || '🧴', tag?.color || '#29528C');
+      }
+
+      const itemData = {
+        id: editId || `item-${Date.now()}`,
+        name,
+        tagId,
+        status,
+        expDate,
+        openedDate: status === 'opened' ? openedDate : '',
+        paoMonths,
+        totalCapacity,
+        unit,
+        dailyUsage,
+        note,
+        photoBase64: finalPhoto,
+        updatedAt: new Date().toISOString()
+      };
+
+      try {
+        await dbSaveItem(itemData);
+        inventoryItems = await dbGetAllItems();
+        renderInventoryCards();
+        closeItemModal();
+        showToast('✅ 庫存物品已成功儲存至 IndexedDB！');
+      } catch (err) {
+        showToast('儲存失敗：' + err.message);
+      }
+    }
+
+    // Custom confirm dialog for Item Deletion (resolves iframe confirm blockage!)
+    function deleteInventoryItem(id) {
+      const item = inventoryItems.find(x => x.id === id);
+      const name = item ? `「${item.name}」` : '此物品';
+      showConfirmDialog({
+        title: '確定刪除此庫存物品？',
+        message: `您即將從庫存中永久移除 ${name} 及其照片縮圖。`,
+        icon: 'fa-trash',
+        danger: true,
+        confirmText: '確定刪除',
+        onConfirm: async () => {
+          await dbDeleteItem(id);
+          inventoryItems = await dbGetAllItems();
+          renderInventoryCards();
+          showToast(`已成功刪除 ${name}`);
+        }
+      });
+    }
+
+    // ==========================================
+    // MODULE A: 任務表單與儲存 (Task Form Modal)
+    // ==========================================
+    function openCreateTask(editId = null) {
+      document.getElementById('taskForm').reset();
+      document.getElementById('editingTaskId').value = editId || '';
+      selectedWeekdays = [1, 2, 3, 4, 5];
+      updateWeekdayButtonsUi();
+
+      if (editId) {
+        const t = tasks.find(x => x.id === editId);
+        if (t) {
+          document.getElementById('formTitle').innerText = '編輯任務設定';
+          document.getElementById('taskNameInput').value = t.name;
+          document.getElementById('taskTagSelect').value = t.tagId || taskTags[0]?.id;
+          document.querySelector(`input[name="taskCategoryType"][value="${t.categoryType || 'habit'}"]`).checked = true;
+          document.querySelector(`input[name="trackingMode"][value="${t.trackingMode || 'checkbox'}"]`).checked = true;
+          if (t.scheduledTime) document.getElementById('scheduledTimeInput').value = t.scheduledTime;
+          if (t.timeSlotName) document.getElementById('timeSlotNameInput').value = t.timeSlotName;
+          if (t.unit) document.getElementById('numberUnitInput').value = t.unit;
+          if (t.periodType) document.getElementById('habitPeriodType').value = t.periodType;
+          if (t.weekdays) {
+            selectedWeekdays = [...t.weekdays];
+            updateWeekdayButtonsUi();
+          }
+          if (t.frequency) document.getElementById('intervalDaysInput').value = t.frequency;
+          if (t.cardMode) document.querySelector(`input[name="longTermCardType"][value="${t.cardMode}"]`).checked = true;
+          if (t.startDate) document.getElementById('longTermStartDateInput').value = t.startDate;
+          
+          const cycleSel = document.getElementById('longTermCycleSelect');
+          const customBlock = document.getElementById('customCycleDaysBlock');
+          const customInput = document.getElementById('customCycleDaysInput');
+          if (t.cycleDays) {
+            const standard = ['90', '180', '365', '730', '1095'];
+            if (standard.includes(String(t.cycleDays))) {
+              cycleSel.value = String(t.cycleDays);
+              customBlock.classList.add('hidden');
+            } else {
+              cycleSel.value = 'custom';
+              customBlock.classList.remove('hidden');
+              customInput.value = t.cycleDays;
+            }
+          }
+
+          document.getElementById('enableLinePushInput').checked = !!t.enableLinePush;
+          document.getElementById('taskNoteInput').value = t.note || '';
+        }
+      } else {
+        document.getElementById('formTitle').innerText = '新增任務與追蹤項目';
+        document.getElementById('longTermStartDateInput').value = getTodayIso();
+        document.getElementById('scheduledTimeInput').value = '08:00';
+        document.getElementById('timeSlotNameInput').value = '晨間日常';
+      }
+
+      handleCategoryTypeChange();
+      handleTrackingModeChange();
+      handleLongTermCycleChange();
+      document.getElementById('taskModal').classList.remove('hidden');
+      updateBodyScrollLock();
+    }
+
+    function openCreateLongTermTask() {
+      openCreateTask();
+      document.querySelector('input[name="taskCategoryType"][value="longterm"]').checked = true;
+      handleCategoryTypeChange();
+    }
+
+    function closeTaskModal() {
+      document.getElementById('taskModal').classList.add('hidden');
+      updateBodyScrollLock();
+    }
+
+    function setFormTimeSlot(timeStr, label) {
+      document.getElementById('scheduledTimeInput').value = timeStr;
+      document.getElementById('timeSlotNameInput').value = label;
+    }
+
+    function handleCategoryTypeChange() {
+      const type = document.querySelector('input[name="taskCategoryType"]:checked').value;
+      const habitBlock = document.getElementById('habitScheduleBlock');
+      const longTermBlock = document.getElementById('longTermConfigBlock');
+      const timelineSlotBlock = document.getElementById('timelineSlotBlock');
+
+      if (type === 'habit') {
+        habitBlock.classList.remove('hidden');
+        timelineSlotBlock.classList.remove('hidden');
+        longTermBlock.classList.add('hidden');
+      } else {
+        habitBlock.classList.add('hidden');
+        timelineSlotBlock.classList.add('hidden');
+        longTermBlock.classList.remove('hidden');
+      }
+    }
+
+    function handleTrackingModeChange() {
+      const mode = document.querySelector('input[name="trackingMode"]:checked').value;
+      const unitBlock = document.getElementById('numberUnitBlock');
+      if (mode === 'number') unitBlock.classList.remove('hidden');
+      else unitBlock.classList.add('hidden');
+    }
+
+    function handlePeriodTypeChange() {
+      const period = document.getElementById('habitPeriodType').value;
+      const wdRow = document.getElementById('weekdaySelectRow');
+      const intRow = document.getElementById('intervalDaysRow');
+
+      if (period === 'weekday') {
+        wdRow.classList.remove('hidden');
+        intRow.classList.add('hidden');
+      } else {
+        wdRow.classList.add('hidden');
+        intRow.classList.remove('hidden');
+      }
+    }
+
+    function handleLongTermCardTypeChange() {
+      const mode = document.querySelector('input[name="longTermCardType"]:checked').value;
+      const cycleCol = document.getElementById('longTermCycleCol');
+      const dateLabel = document.getElementById('baseDateLabel');
+      const customBlock = document.getElementById('customCycleDaysBlock');
+
+      if (mode === 'countdown') {
+        cycleCol.classList.remove('hidden');
+        dateLabel.innerText = '起始 / 上次完成日期';
+        handleLongTermCycleChange();
+      } else {
+        cycleCol.classList.add('hidden');
+        customBlock.classList.add('hidden');
+        dateLabel.innerText = '交往 / 結婚紀念起始日';
+      }
+    }
+
+    function handleLongTermCycleChange() {
+      const val = document.getElementById('longTermCycleSelect').value;
+      const customBlock = document.getElementById('customCycleDaysBlock');
+      if (val === 'custom') {
+        customBlock.classList.remove('hidden');
+      } else {
+        customBlock.classList.add('hidden');
+      }
+    }
+
+    function toggleWeekday(dayNum) {
+      const idx = selectedWeekdays.indexOf(dayNum);
+      if (idx > -1) {
+        if (selectedWeekdays.length === 1) return showToast('至少需選取一天！');
+        selectedWeekdays.splice(idx, 1);
+      } else {
+        selectedWeekdays.push(dayNum);
+      }
+      updateWeekdayButtonsUi();
+    }
+
+    function updateWeekdayButtonsUi() {
+      for (let i = 0; i <= 6; i++) {
+        const btn = document.getElementById(`wdBtn-${i}`);
+        if (!btn) continue;
+        if (selectedWeekdays.includes(i)) {
+          btn.className = 'touch-target wd-btn w-9 h-9 rounded-full text-xs font-bold transition-all bg-morandi dark:bg-morandi-light text-white shadow-xs cursor-pointer';
+        } else {
+          btn.className = 'touch-target wd-btn w-9 h-9 rounded-full text-xs font-bold transition-all bg-slate-200 dark:bg-[#22262E] text-slate-500 cursor-pointer';
+        }
+      }
+    }
+
+    async function handleSaveTask(e) {
+      e.preventDefault();
+      const editId = document.getElementById('editingTaskId').value;
+      const name = document.getElementById('taskNameInput').value.trim();
+      const tagId = document.getElementById('taskTagSelect').value;
+      const categoryType = document.querySelector('input[name="taskCategoryType"]:checked').value;
+      const trackingMode = document.querySelector('input[name="trackingMode"]:checked').value;
+      const unit = document.getElementById('numberUnitInput').value.trim() || 'kg';
+      const scheduledTime = document.getElementById('scheduledTimeInput').value || '08:00';
+      const timeSlotName = document.getElementById('timeSlotNameInput').value.trim() || '日常';
+      const periodType = document.getElementById('habitPeriodType').value;
+      const frequency = parseInt(document.getElementById('intervalDaysInput').value) || 1;
+      const cardMode = document.querySelector('input[name="longTermCardType"]:checked').value;
+      const startDate = document.getElementById('longTermStartDateInput').value || getTodayIso();
+      const cycleSelectVal = document.getElementById('longTermCycleSelect').value;
+      const isPush = document.getElementById('enableLinePushInput').checked;
+      const note = document.getElementById('taskNoteInput').value.trim();
+
+      let cycleDays = 180;
+      if (cycleSelectVal === 'custom') {
+        cycleDays = parseInt(document.getElementById('customCycleDaysInput').value) || 90;
+      } else {
+        cycleDays = parseInt(cycleSelectVal) || 180;
+      }
+
+      const tag = taskTags.find(t => t.id === tagId);
+
+      const taskData = {
+        id: editId || `task-${Date.now()}`,
+        name,
+        categoryType,
+        trackingMode,
+        unit,
+        scheduledTime,
+        timeSlotName,
+        periodType,
+        weekdays: [...selectedWeekdays],
+        frequency,
+        cardMode,
+        startDate,
+        cycleDays,
+        tagId,
+        note,
+        enableLinePush: isPush,
+        accentColor: tag ? tag.color : '#6BA4E8'
+      };
+
+      if (editId) {
+        tasks = tasks.map(t => t.id === editId ? taskData : t);
+      } else {
+        tasks.unshift(taskData);
+      }
+      safeSet(KEY_TASKS, JSON.stringify(tasks));
+      closeTaskModal();
+
+      // 自動將任務的 name、scheduledTime、enableLinePush 同步寫入試算表 Tasks 分頁
+      syncTaskToGas(taskData);
+
+      if (categoryType === 'longterm') {
+        switchTab('longterm');
+      } else {
+        switchTab('tasks');
+      }
+      showToast('✅ 任務已成功排程！');
+    }
+
+    // Custom confirm dialog for Task Deletion (resolves iframe confirm blockage!)
+    function deleteTask(id) {
+      const task = tasks.find(t => t.id === id);
+      const name = task ? `「${task.name}」` : '此任務';
+      showConfirmDialog({
+        title: '確定刪除此任務？',
+        message: `您即將刪除 ${name}，此動作將一併移除該任務的設定與打卡紀錄。`,
+        icon: 'fa-trash',
+        danger: true,
+        confirmText: '確定刪除',
+        onConfirm: () => {
+          tasks = tasks.filter(t => t.id !== id);
+          safeSet(KEY_TASKS, JSON.stringify(tasks));
+          if (history[id]) {
+            delete history[id];
+            safeSet(KEY_HISTORY, JSON.stringify(history));
+          }
+          // 從試算表 Tasks 分頁同步移除該任務
+          syncTaskDeletionToGas(id);
+          renderTaskList();
+          renderLongTermCards();
+          renderDashboard();
+          showToast(`已成功刪除 ${name}`);
+        }
+      });
+    }
+
+    // ==========================================
+    // MODULE A: 成就儀表板 (Dashboard Logic)
+    // ==========================================
+    function changeDashboardMonth(delta) {
+      dashMonth += delta;
+      if (dashMonth < 1) { dashMonth = 12; dashYear -= 1; }
+      else if (dashMonth > 12) { dashMonth = 1; dashYear += 1; }
+      renderDashboard();
+    }
+
+    function renderDashboard() {
+      document.getElementById('dashboardMonthTitle').innerText = `${dashYear} 年 ${dashMonth} 月`;
+      const daysInMonth = new Date(dashYear, dashMonth, 0).getDate();
+      const habitTasks = tasks.filter(t => t.categoryType === 'habit');
+
+      let totalSchedSlots = 0;
+      let totalCompletedHits = 0;
+      const mStr = String(dashMonth).padStart(2, '0');
+
+      habitTasks.forEach(t => {
+        for (let d = 1; d <= daysInMonth; d++) {
+          const dateObj = new Date(dashYear, dashMonth - 1, d);
+          const dIso = `${dashYear}-${mStr}-${String(d).padStart(2, '0')}`;
+          const isSched = isTaskScheduledOnDate(t, dateObj);
+
+          if (isSched) {
+            totalSchedSlots++;
+            if (history[t.id]?.[dIso]?.done) {
+              totalCompletedHits++;
+            }
+          }
+        }
+      });
+
+      const overallPct = totalSchedSlots > 0 ? Math.round((totalCompletedHits / totalSchedSlots) * 100) : 0;
+      document.getElementById('overallRateText').innerText = `${overallPct}%`;
+      document.getElementById('overallRateBar').style.width = `${overallPct}%`;
+      document.getElementById('monthCompletedStatsText').innerHTML = `已達成：<strong class="text-white">${totalCompletedHits} / ${totalSchedSlots}</strong> 次`;
+
+      const container = document.getElementById('habitMatrixGrid');
+      if (habitTasks.length === 0) {
+        container.innerHTML = '<div class="col-span-2 text-center py-6 text-xs text-slate-400">目前尚無日常習慣任務</div>';
+        return;
+      }
+
+      container.innerHTML = habitTasks.map(t => {
+        const tag = taskTags.find(x => x.id === t.tagId);
+        const color = t.accentColor || tag?.color || '#6BA4E8';
+
+        let schedCount = 0;
+        let doneCount = 0;
+        let dayTilesHtml = '';
+        let numberValues = [];
+
+        for (let d = 1; d <= daysInMonth; d++) {
+          const dateObj = new Date(dashYear, dashMonth - 1, d);
+          const dIso = `${dashYear}-${mStr}-${String(d).padStart(2, '0')}`;
+          const rec = history[t.id]?.[dIso];
+          const isDone = !!rec?.done;
+          const isSched = isTaskScheduledOnDate(t, dateObj);
+
+          if (isSched) {
+            schedCount++;
+            if (isDone) doneCount++;
+          }
+
+          if (t.trackingMode === 'number' && rec?.value !== undefined) {
+            numberValues.push({ day: d, val: rec.value });
+          }
+
+          if (!isSched) {
+            dayTilesHtml += `
+              <div class="aspect-square rounded-lg flex items-center justify-center text-[10px] font-bold bg-[#14161A] text-slate-700 opacity-40 cursor-not-allowed" title="未排定此日執行">
+                ${d}
+              </div>
+            `;
+          } else {
+            dayTilesHtml += `
+              <button type="button" onclick="toggleMatrixDay('${t.id}', '${dIso}')" class="aspect-square rounded-lg flex items-center justify-center text-[11px] font-bold transition-all active:scale-90 cursor-pointer" style="${isDone ? `background-color: ${color}; color: #16181D;` : 'background-color: #181A1F; color: #64748B;'}">
+                ${d}
+              </button>
+            `;
+          }
+        }
+
+        const pct = schedCount > 0 ? Math.round((doneCount / schedCount) * 100) : 0;
+
+        let trendHtml = '';
+        if (t.trackingMode === 'number' && numberValues.length > 0) {
+          const vals = numberValues.map(x => x.val);
+          const minVal = Math.min(...vals);
+          const maxVal = Math.max(...vals);
+          const lastVal = vals[vals.length - 1];
+
+          trendHtml = `
+            <div class="mt-3 pt-2.5 border-t border-slate-700/40">
+              <div class="flex items-center justify-between text-[11px] text-slate-400 mb-1.5">
+                <span>數值趨勢 (${t.unit || ''})</span>
+                <span class="text-white font-mono font-bold">最新：${lastVal} ${t.unit || ''} (最低 ${minVal} / 最高 ${maxVal})</span>
+              </div>
+              <div class="h-6 flex items-end gap-1 bg-[#14161A] p-1 rounded-lg">
+                ${numberValues.slice(-15).map(nv => {
+                  const barH = maxVal > minVal ? Math.round(((nv.val - minVal) / (maxVal - minVal)) * 100) : 60;
+                  return `<div class="flex-1 bg-amber-400/80 hover:bg-amber-300 rounded-xs transition-all" style="height: ${Math.max(20, barH)}%" title="${nv.day}日: ${nv.val} ${t.unit || ''}"></div>`;
+                }).join('')}
+              </div>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="bg-[#22262E] rounded-2xl p-4 border border-slate-700/60 shadow-md text-white flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-1.5 min-w-0">
+                <span class="text-sm shrink-0">${tag ? tag.icon : '🌱'}</span>
+                <h4 class="text-xs font-bold text-slate-100 truncate">${t.name}</h4>
+              </div>
+              <span class="text-[9px] text-slate-400 bg-[#16181D] px-1.5 py-0.5 rounded font-mono shrink-0 whitespace-nowrap">
+                ${t.scheduledTime ? `${t.scheduledTime} 排定` : '每日執行'}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-7 gap-1.5 my-1">
+              ${dayTilesHtml}
+            </div>
+
+            <div class="flex items-center justify-center gap-4 mt-3 pt-2 border-t border-slate-700/40 text-xs text-slate-300 font-medium">
+              <div class="flex items-center gap-1 whitespace-nowrap">
+                <span class="text-xs">◐</span>
+                <span class="font-bold text-white font-mono">${pct}%</span>
+              </div>
+              <span class="text-slate-600">|</span>
+              <div class="flex items-center gap-1 whitespace-nowrap">
+                <i class="fa-solid fa-check text-[10px] text-white"></i>
+                <span class="font-bold text-white font-mono">${doneCount} / ${schedCount}</span>
+              </div>
+            </div>
+
+            ${trendHtml}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function toggleMatrixDay(taskId, dateIso) {
+      if (!history[taskId]) history[taskId] = {};
+      const current = history[taskId][dateIso];
+      if (current?.done) {
+        delete history[taskId][dateIso];
+      } else {
+        history[taskId][dateIso] = { done: true, time: '09:00' };
+      }
+      safeSet(KEY_HISTORY, JSON.stringify(history));
+      renderDashboard();
+    }
+
+    // ==========================================
+    // MODULE C: 設定、標籤管理與資料安全 (Data Security)
+    // ==========================================
+    async function exportBackupData() {
+      try {
+        showToast('📦 正在整合 LocalStorage 與 IndexedDB 照片資料...');
+        
+        const allInventory = await dbGetAllItems();
+        
+        const backupPayload = {
+          app: 'SuperRoutineInventoryApp',
+          version: '6.0',
+          exportedAt: new Date().toISOString(),
+          data: {
+            tasks,
+            taskTags,
+            itemTags,
+            history,
+            gasUrl: safeGet(KEY_GAS_URL) || '',
+            theme: safeGet(KEY_THEME) || 'dark',
+            viewMode: taskViewMode,
+            inventory: allInventory
+          }
+        };
+
+        const jsonStr = JSON.stringify(backupPayload, null, 2);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+        const fileName = `生活作息與效期庫存備份_${dateStr}.json`;
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showToast(`🎉 備份已下載為 ${fileName}！請存於手機檔案或雲端。`);
+      } catch (err) {
+        showToast('匯出失敗：' + err.message);
+      }
+    }
+
+    function triggerImportFileInput() {
+      document.getElementById('importJsonFileInput').click();
+    }
+
+    async function handleImportBackup(e) {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      try {
+        showToast('正在讀取並解析備份檔案...');
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+
+        const payload = parsed.data || parsed;
+        if (!payload.tasks && !payload.inventory) {
+          throw new Error('此檔案格式不符，未包含任務或庫存資料！');
+        }
+
+        showConfirmDialog({
+          title: '確認匯入並還原備份？',
+          message: `您即將以備份檔（匯出時間：${parsed.exportedAt || '未知'}）完全覆寫目前的資料。此動作將還原備份檔內所有任務、打卡歷史與照片。`,
+          icon: 'fa-file-import',
+          danger: false,
+          confirmText: '確認覆寫還原',
+          onConfirm: async () => {
+            if (Array.isArray(payload.tasks)) {
+              tasks = payload.tasks;
+              safeSet(KEY_TASKS, JSON.stringify(tasks));
+            }
+            if (Array.isArray(payload.taskTags)) {
+              taskTags = payload.taskTags;
+              safeSet(KEY_TASK_TAGS, JSON.stringify(taskTags));
+            }
+            if (Array.isArray(payload.itemTags)) {
+              itemTags = payload.itemTags;
+              safeSet(KEY_ITEM_TAGS, JSON.stringify(itemTags));
+            }
+            if (payload.history && typeof payload.history === 'object') {
+              history = payload.history;
+              safeSet(KEY_HISTORY, JSON.stringify(history));
+            }
+            if (payload.gasUrl) safeSet(KEY_GAS_URL, payload.gasUrl);
+
+            await dbClearAllItems();
+            if (Array.isArray(payload.inventory)) {
+              for (const item of payload.inventory) {
+                await dbSaveItem(item);
+              }
+            }
+            inventoryItems = await dbGetAllItems();
+
+            renderTagOptions();
+            renderTaskList();
+            renderLongTermCards();
+            renderInventoryCards();
+            renderDashboard();
+
+            showToast('🎉 資料已完美復活還原！');
+          }
+        });
+      } catch (err) {
+        showToast('匯入失敗：' + err.message);
+      } finally {
+        e.target.value = '';
+      }
+    }
+
+    // ========================================================
+    // MODULE C - 3 INDEPENDENT MAINTENANCE & CLEANUP BUTTONS
+    // ========================================================
+    // 按鈕 A: 清除紀錄 (保留所有任務與庫存物品，清空 history 打卡紀錄、清空喝水與體重數字、清空長期追蹤起始日)
+    function handleClearRecords() {
+      showConfirmDialog({
+        title: '清除所有打卡與數值紀錄？',
+        message: '此動作將取消今日打卡勾選、清空喝水與體重所有數值紀錄、重設長期追蹤完成日期。所有「任務」與「物品」設定將完整保留！',
+        icon: 'fa-rotate-left',
+        danger: false,
+        confirmText: '確認清除紀錄',
+        onConfirm: () => {
+          // 1. Clear history records
+          history = {};
+          safeSet(KEY_HISTORY, JSON.stringify(history));
+
+          // 2. Clear long-term start dates
+          tasks = tasks.map(t => {
+            if (t.categoryType === 'longterm') {
+              return { ...t, startDate: '' };
+            }
+            return t;
+          });
+          safeSet(KEY_TASKS, JSON.stringify(tasks));
+
+          renderTaskList();
+          renderLongTermCards();
+          renderDashboard();
+          showToast('✅ 已清空所有打卡與數值紀錄，任務設定皆已保留！');
+        }
+      });
+    }
+
+    // 按鈕 B: 清除圖像快取 (保留所有庫存物品文字屬性，清空所有 photoBase64 釋放手機空間)
+    function handleClearImageCache() {
+      showConfirmDialog({
+        title: '清除所有物品圖片快取？',
+        message: '此動作將清空 IndexedDB 中所有物品的照片（轉為預設圖示），以大幅釋放手機儲存空間。物品名稱、效期與標籤設定將完整保留！',
+        icon: 'fa-image',
+        danger: false,
+        confirmText: '確認釋放圖片容量',
+        onConfirm: async () => {
+          for (const item of inventoryItems) {
+            item.photoBase64 = '';
+            await dbSaveItem(item);
+          }
+          inventoryItems = await dbGetAllItems();
+          renderInventoryCards();
+          showToast('✅ 已清空所有物品照片快取，成功釋放手機空間！');
+        }
+      });
+    }
+
+    // 按鈕 C: 完全初始化 (清空所有 LocalStorage 與 IndexedDB 資料，變為乾淨初始空白狀態)
+    function handleFactoryReset() {
+      showConfirmDialog({
+        title: '⚠️ 確定完全初始化？',
+        message: '此動作將清空所有 LocalStorage 與 IndexedDB（任務、打卡、物品、照片皆清除），讓整個 App 變成完全乾淨的初始空白狀態！',
+        icon: 'fa-triangle-exclamation',
+        danger: true,
+        confirmText: '完全清空初始化',
+        onConfirm: async () => {
+          localStorage.clear();
+          safeSet(KEY_FACTORY_RESET, 'true');
+          tasks = [];
+          history = {};
+          safeSet(KEY_TASKS, JSON.stringify(tasks));
+          safeSet(KEY_HISTORY, JSON.stringify(history));
+
+          await dbClearAllItems();
+          inventoryItems = [];
+
+          renderTaskList();
+          renderLongTermCards();
+          renderInventoryCards();
+          renderDashboard();
+          showToast('🚨 已完成完全初始化，目前為空白狀態！');
+        }
+      });
+    }
+
+    function setTheme(theme, showToastMsg = true) {
+      const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        document.getElementById('themeIcon').className = 'fa-solid fa-moon text-amber-400 text-sm';
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.getElementById('themeIcon').className = 'fa-solid fa-sun text-slate-700 text-sm';
+      }
+      safeSet(KEY_THEME, theme);
+
+      const darkBtn = document.getElementById('themeBtn-dark');
+      const lightBtn = document.getElementById('themeBtn-light');
+      if (darkBtn && lightBtn) {
+        darkBtn.className = isDark ? 'px-3 py-1.5 rounded-lg font-semibold bg-morandi text-white cursor-pointer whitespace-nowrap' : 'px-3 py-1.5 rounded-lg font-semibold text-slate-500 cursor-pointer whitespace-nowrap';
+        lightBtn.className = !isDark ? 'px-3 py-1.5 rounded-lg font-semibold bg-white text-slate-900 shadow-xs cursor-pointer whitespace-nowrap' : 'px-3 py-1.5 rounded-lg font-semibold text-slate-500 cursor-pointer whitespace-nowrap';
+      }
+      if (showToastMsg) showToast(`已切換為${isDark ? '夜間模式' : '日間模式'}`);
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.contains('dark');
+      setTheme(isDark ? 'light' : 'dark');
+    }
+
+    function renderTagOptions() {
+      const taskSelect = document.getElementById('taskTagSelect');
+      const taskFilter = document.getElementById('taskTagFilter');
+      const ltFilter = document.getElementById('longTermTagFilter');
+
+      if (taskSelect) taskSelect.innerHTML = taskTags.map(t => `<option value="${t.id}">${t.icon} ${t.name}</option>`).join('');
+      if (taskFilter) taskFilter.innerHTML = '<option value="all">全部標籤</option>' + taskTags.map(t => `<option value="${t.id}">${t.icon} ${t.name}</option>`).join('');
+      if (ltFilter) ltFilter.innerHTML = '<option value="all">全部標籤</option>' + taskTags.map(t => `<option value="${t.id}">${t.icon} ${t.name}</option>`).join('');
+
+      const itemSelect = document.getElementById('itemTagSelect');
+      const invFilter = document.getElementById('inventoryTagFilter');
+      if (itemSelect) itemSelect.innerHTML = itemTags.map(t => `<option value="${t.id}">${t.icon} ${t.name}</option>`).join('');
+      if (invFilter) invFilter.innerHTML = '<option value="all">全部標籤</option>' + itemTags.map(t => `<option value="${t.id}">${t.icon} ${t.name}</option>`).join('');
+
+      const taskTagsGrid = document.getElementById('taskTagsGrid');
+      if (taskTagsGrid) {
+        taskTagsGrid.innerHTML = taskTags.map(t => `
+          <div class="p-2.5 bg-slate-50 dark:bg-[#16181D] rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
+            <span class="flex items-center gap-1.5 truncate font-medium"><span>${t.icon}</span><span class="truncate">${t.name}</span></span>
+            ${taskTags.length > 1 ? `<button type="button" onclick="event.stopPropagation(); deleteTaskTag('${t.id}')" class="touch-target w-10 h-10 rounded-lg bg-slate-200/60 dark:bg-slate-800 text-slate-400 hover:text-red-500 hover:bg-red-500/15 flex items-center justify-center shrink-0 active:scale-95 transition-all cursor-pointer" title="刪除標籤"><i class="fa-solid fa-trash text-xs"></i></button>` : ''}
+          </div>
+        `).join('');
+      }
+
+      const itemTagsGrid = document.getElementById('itemTagsGrid');
+      if (itemTagsGrid) {
+        itemTagsGrid.innerHTML = itemTags.map(t => `
+          <div class="p-2.5 bg-slate-50 dark:bg-[#16181D] rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2">
+            <span class="flex items-center gap-1.5 truncate font-medium"><span>${t.icon}</span><span class="truncate">${t.name}</span></span>
+            ${itemTags.length > 1 ? `<button type="button" onclick="event.stopPropagation(); deleteItemTag('${t.id}')" class="touch-target w-10 h-10 rounded-lg bg-slate-200/60 dark:bg-slate-800 text-slate-400 hover:text-red-500 hover:bg-red-500/15 flex items-center justify-center shrink-0 active:scale-95 transition-all cursor-pointer" title="刪除標籤"><i class="fa-solid fa-trash text-xs"></i></button>` : ''}
+          </div>
+        `).join('');
+      }
+    }
+
+    function toggleAddTagForm() {
+      document.getElementById('addTagForm').classList.toggle('hidden');
+    }
+
+    function saveNewTag() {
+      const name = document.getElementById('newTagName').value.trim();
+      const kind = document.getElementById('newTagKind').value;
+      const icon = document.getElementById('newTagIcon').value.trim() || '📌';
+      const color = document.getElementById('newTagColor').value;
+      if (!name) return showToast('請填寫標籤名稱');
+
+      const newTag = { id: `tag-${Date.now()}`, name, icon, color };
+      if (kind === 'task') {
+        taskTags.push(newTag);
+        safeSet(KEY_TASK_TAGS, JSON.stringify(taskTags));
+      } else {
+        itemTags.push(newTag);
+        safeSet(KEY_ITEM_TAGS, JSON.stringify(itemTags));
+      }
+
+      document.getElementById('newTagName').value = '';
+      toggleAddTagForm();
+      renderTagOptions();
+      showToast(`已建立${kind === 'task' ? '任務' : '物品'}標籤「${icon} ${name}」`);
+    }
+
+    function deleteTaskTag(id) {
+      if (tasks.some(t => t.tagId === id)) return showToast('此標籤目前有任務使用中，無法刪除');
+      const tag = taskTags.find(t => t.id === id);
+      const name = tag ? `「${tag.name}」` : '此標籤';
+      showConfirmDialog({
+        title: '確定刪除任務標籤？',
+        message: `確定要刪除 ${name} 嗎？`,
+        icon: 'fa-trash',
+        danger: true,
+        confirmText: '確定刪除',
+        onConfirm: () => {
+          taskTags = taskTags.filter(t => t.id !== id);
+          safeSet(KEY_TASK_TAGS, JSON.stringify(taskTags));
+          renderTagOptions();
+          showToast(`已刪除標籤 ${name}`);
+        }
+      });
+    }
+
+    function deleteItemTag(id) {
+      if (inventoryItems.some(i => i.tagId === id)) return showToast('此標籤目前有庫存物品使用中，無法刪除');
+      const tag = itemTags.find(t => t.id === id);
+      const name = tag ? `「${tag.name}」` : '此標籤';
+      showConfirmDialog({
+        title: '確定刪除物品標籤？',
+        message: `確定要刪除 ${name} 嗎？`,
+        icon: 'fa-trash',
+        danger: true,
+        confirmText: '確定刪除',
+        onConfirm: () => {
+          itemTags = itemTags.filter(t => t.id !== id);
+          safeSet(KEY_ITEM_TAGS, JSON.stringify(itemTags));
+          renderTagOptions();
+          showToast(`已刪除標籤 ${name}`);
+        }
+      });
+    }
+
+    function saveGasUrl() {
+      const url = document.getElementById('gasUrlInput').value.trim();
+      safeSet(KEY_GAS_URL, url);
+      showToast('GAS 雲端網址已儲存！');
+    }
+
+    async function testGasPing() {
+      const url = document.getElementById('gasUrlInput').value.trim();
+      if (!url) return showToast('請先填入 Google Apps Script Web App URL');
+      showToast('正在測試 Google Apps Script 連線...');
+      try {
+        await fetch(url, {
+          method: 'POST',
+          body: JSON.stringify({ taskName: 'Ping測試', test: true }),
+          mode: 'no-cors'
+        });
+        showToast('✅ 雲端連線成功發送！');
+      } catch (e) {
+        showToast('連線失敗，請檢查網址或權限設定');
+      }
+    }
+
+    const GAS_BACKEND_CODE = `/**
+ * 生活作息打卡 & 美妝效期 LINE 官方推播機器人 (全自動建表＋動態排程版)
+ * 1. 填入你的 LINE Channel Access Token 與 User ID
+ * 2. 點「部署」->「新增部署」->「網頁應用程式 (Web App)」-> 存取權限選「所有人」
+ * 3. 複製 Web App URL 貼回 App 設定頁面
+ * 4. 點左側時鐘「觸發條件」-> 新增：執行 checkAllReminders()，每 1 分鐘或每 5 分鐘執行一次
+ */
+
+const LINE_CHANNEL_ACCESS_TOKEN = "你的_LINE_CHANNEL_ACCESS_TOKEN";
+const LINE_USER_ID = "你的_LINE_USER_ID_或群組ID";
+
+function doPost(e) {
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    // 1. 同步單一任務 (新增或編輯) -> 自動寫入 Tasks 分頁 (無需手動建表)
+    if (data.action === "SYNC_TASK" && data.task) {
+      saveOrUpdateTask(ss, data.task);
+      return createJsonResponse({ status: "success", action: "SYNC_TASK" });
+    }
+
+    // 2. 刪除任務 -> 從 Tasks 分頁移除
+    if (data.action === "DELETE_TASK" && data.taskId) {
+      deleteTaskFromSheet(ss, data.taskId);
+      return createJsonResponse({ status: "success", action: "DELETE_TASK" });
+    }
+
+    // 3. 今日打卡成功紀錄 -> 寫入 TodayHistory 分頁
+    if (data.action === "LOG_CHECKIN") {
+      logCheckinStatus(ss, data.taskId || data.taskName, true, data.time, data.value);
+      return createJsonResponse({ status: "success", action: "LOG_CHECKIN" });
+    }
+
+    // 4. 取消今日打卡
+    if (data.action === "CANCEL_CHECKIN") {
+      logCheckinStatus(ss, data.taskId || data.taskName, false);
+      return createJsonResponse({ status: "success", action: "CANCEL_CHECKIN" });
+    }
+
+    // 5. 全量同步任務與美妝庫存
+    if (data.action === "SYNC_ALL") {
+      syncAllData(ss, data);
+      return createJsonResponse({ status: "success", action: "SYNC_ALL" });
+    }
+
+    // 6. 老公救援 SOS 即時推播
+    if (data.action === "SOS_HUSBAND_HELP") {
+      const msg = "🚨【老公緊急救援通知】\\n老婆的美妝「" + data.itemName + "」即將在 " + data.daysLeft + " 天後過期（死線：" + data.deadline + "）！\\n依目前用量恐怕會浪費 " + data.wasteAmount + " " + data.unit + "，今晚請務必幫老婆擦保養品～❤️";
+      sendLinePush(msg);
+      return createJsonResponse({ status: "success", action: "SOS_HUSBAND_HELP" });
+    }
+
+    if (data.test) {
+      return createJsonResponse({ status: "success", message: "連線測試成功！" });
+    }
+
+    return createJsonResponse({ status: "ok" });
+  } catch (err) {
+    return createJsonResponse({ status: "error", message: err.toString() });
+  }
+}
+
+// 核心定時巡檢器 (請在觸發條件設定每 1 分鐘或每 5 分鐘執行一次)
+function checkAllReminders() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const tasks = getTasksFromSheet(ss);
+  const todayHistory = getTodayHistory(ss);
+  const sentLogs = getSentLogs(ss);
+
+  const now = new Date();
+  const currentTime = Utilities.formatDate(now, "Asia/Taipei", "HH:mm");
+  const todayStr = Utilities.formatDate(now, "Asia/Taipei", "yyyy-MM-dd");
+
+  // 1. 動態比對任務時間 (例如 14:10, 21:30)
+  tasks.forEach(task => {
+    if (task.enableLinePush && task.scheduledTime === currentTime) {
+      const isDone = todayHistory[task.id] && todayHistory[task.id].done;
+      const logKey = todayStr + "_" + task.id + "_" + currentTime;
+
+      // 若未打卡且當前分鐘尚未推播過
+      if (!isDone && !sentLogs[logKey]) {
+        sendLinePush("⏰【即時生活作息提醒】" + currentTime + "\\n您排定的「" + task.name + "」還沒完成打卡喔！\\n記得抽空完成～✨");
+        sentLogs[logKey] = true;
+      }
+    }
+  });
+
+  // 2. 美妝快到期巡檢 (固定於每天 20:00 執行)
+  if (currentTime === "20:00") {
+    checkCosmeticsExpiry(ss, todayStr, sentLogs);
+  }
+
+  saveSentLogs(ss, sentLogs);
+}
+
+function checkCosmeticsExpiry(ss, todayStr, sentLogs) {
+  const invSheet = ss.getSheetByName("Inventory");
+  if (!invSheet) return;
+  const items = getJsonFromSheet(invSheet);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  items.forEach(item => {
+    if (item.status === "opened" && item.expDate) {
+      const exp = new Date(item.expDate);
+      const diffDays = Math.ceil((exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      const logKey = todayStr + "_inv_" + item.id;
+
+      if (diffDays > 0 && diffDays <= 30 && !sentLogs[logKey]) {
+        sendLinePush("🧴【美妝即將到期提醒】20:00\\n您的「" + item.name + "」只剩 " + diffDays + " 天就到期囉！\\n快點拿出來勤勞擦，或是【🚨 呼叫老公幫忙擦】一起消耗完畢吧！❤️");
+        sentLogs[logKey] = true;
+      }
+    }
+  });
+}
+
+// 輔助函式：自動建立分頁與標題 (完全免手動建表)
+function getOrCreateSheet(ss, name, headers) {
+  let sheet = ss.getSheetByName(name);
+  if (!sheet) {
+    sheet = ss.insertSheet(name);
+    if (headers && headers.length > 0) {
+      sheet.appendRow(headers);
+      sheet.setFrozenRows(1);
+    }
+  }
+  return sheet;
+}
+
+function saveOrUpdateTask(ss, task) {
+  const sheet = getOrCreateSheet(ss, "Tasks", ["ID", "任務名稱", "排程時間", "時段名稱", "啟用LINE推播", "分類", "最後更新"]);
+  const data = sheet.getDataRange().getValues();
+  let rowIndex = -1;
+
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] == task.id) {
+      rowIndex = i + 1;
+      break;
+    }
+  }
+
+  const rowValues = [
+    task.id,
+    task.name,
+    task.scheduledTime || "",
+    task.timeSlotName || "",
+    task.enableLinePush ? "是" : "否",
+    task.categoryType || "habit",
+    new Date().toLocaleString("zh-TW", { timeZone: "Asia/Taipei" })
+  ];
+
+  if (rowIndex > 0) {
+    sheet.getRange(rowIndex, 1, 1, rowValues.length).setValues([rowValues]);
+  } else {
+    sheet.appendRow(rowValues);
+  }
+}
+
+function deleteTaskFromSheet(ss, taskId) {
+  const sheet = ss.getSheetByName("Tasks");
+  if (!sheet) return;
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (data[i][0] == taskId) {
+      sheet.deleteRow(i + 1);
+      break;
+    }
+  }
+}
+
+function getTasksFromSheet(ss) {
+  const sheet = ss.getSheetByName("Tasks");
+  if (!sheet) return [];
+  const rows = sheet.getDataRange().getValues();
+  const list = [];
+  for (let i = 1; i < rows.length; i++) {
+    list.push({
+      id: String(rows[i][0]),
+      name: String(rows[i][1]),
+      scheduledTime: String(rows[i][2]),
+      enableLinePush: rows[i][4] === "是" || rows[i][4] === true
+    });
+  }
+  return list;
+}
+
+function logCheckinStatus(ss, taskId, isDone, timeStr, val) {
+  const sheet = getOrCreateSheet(ss, "TodayHistory", ["JSON_STATE"]);
+  let state = {};
+  try {
+    const raw = sheet.getRange(2, 1).getValue();
+    if (raw) state = JSON.parse(raw);
+  } catch (e) {}
+
+  state[taskId] = { done: isDone, time: timeStr || "", value: val };
+  sheet.getRange(2, 1).setValue(JSON.stringify(state));
+}
+
+function getTodayHistory(ss) {
+  const sheet = ss.getSheetByName("TodayHistory");
+  if (!sheet) return {};
+  try {
+    const raw = sheet.getRange(2, 1).getValue();
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function syncAllData(ss, payload) {
+  if (Array.isArray(payload.tasks)) {
+    const taskSheet = getOrCreateSheet(ss, "Tasks", ["ID", "任務名稱", "排程時間", "時段名稱", "啟用LINE推播", "分類", "最後更新"]);
+    taskSheet.clear();
+    taskSheet.appendRow(["ID", "任務名稱", "排程時間", "時段名稱", "啟用LINE推播", "分類", "最後更新"]);
+    taskSheet.setFrozenRows(1);
+    payload.tasks.forEach(t => {
+      taskSheet.appendRow([t.id, t.name, t.scheduledTime || "", t.timeSlotName || "", t.enableLinePush ? "是" : "否", t.categoryType || "habit", new Date().toLocaleString("zh-TW", { timeZone: "Asia/Taipei" })]);
+    });
+  }
+  if (Array.isArray(payload.inventory)) {
+    const invSheet = getOrCreateSheet(ss, "Inventory", ["JSON_STATE"]);
+    invSheet.getRange(2, 1).setValue(JSON.stringify(payload.inventory));
+  }
+  if (payload.todayHistory) {
+    const histSheet = getOrCreateSheet(ss, "TodayHistory", ["JSON_STATE"]);
+    histSheet.getRange(2, 1).setValue(JSON.stringify(payload.todayHistory));
+  }
+}
+
+function getJsonFromSheet(sheet) {
+  try {
+    const val = sheet.getRange(2, 1).getValue();
+    return val ? JSON.parse(val) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function getSentLogs(ss) {
+  const sheet = getOrCreateSheet(ss, "SentLogs", ["JSON_STATE"]);
+  try {
+    const raw = sheet.getRange(2, 1).getValue();
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) { return {}; }
+}
+
+function saveSentLogs(ss, logs) {
+  const sheet = getOrCreateSheet(ss, "SentLogs", ["JSON_STATE"]);
+  sheet.getRange(2, 1).setValue(JSON.stringify(logs));
+}
+
+function sendLinePush(text) {
+  const url = "https://api.line.me/v2/bot/message/push";
+  const payload = {
+    to: LINE_USER_ID,
+    messages: [{ type: "text", text: text }]
+  };
+  UrlFetchApp.fetch(url, {
+    method: "post",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + LINE_CHANNEL_ACCESS_TOKEN
+    },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+}
+
+function createJsonResponse(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}`;
+
+    function toggleGasScriptPanel() {
+      const panel = document.getElementById('gasScriptPanel');
+      if (!panel) return;
+      panel.classList.toggle('hidden');
+      const content = document.getElementById('gasScriptContent');
+      if (content && !content.innerText) {
+        content.innerText = GAS_BACKEND_CODE;
+      }
+    }
+
+    function copyGasScript() {
+      navigator.clipboard.writeText(GAS_BACKEND_CODE).then(() => {
+        showToast('📋 GAS 完整腳本已複製到剪貼簿！');
+      }).catch(() => {
+        showToast('複製失敗，請手動選取複製');
+      });
+    }
+
+    function showToast(msg) {
+      const c = document.getElementById('toastContainer');
+      const div = document.createElement('div');
+      div.className = 'p-3 rounded-xl shadow-lg border border-slate-700 bg-[#22262E] text-white text-xs font-semibold';
+      div.innerText = msg;
+      c.appendChild(div);
+      setTimeout(() => div.remove(), 2800);
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
